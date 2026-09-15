@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NCR EJ Log Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg: #14171c;
+    --panel: #1b1f26;
+    --panel-2: #21262f;
+    --line: #2c323c;
+    --ink: #e4e7ec;
+    --ink-dim: #939aa6;
+    --ink-faint: #5f6672;
+    --amber: #f0a94e;
+    --amber-dim: #7a5a2e;
+    --paper: #eee7d6;
+    --paper-ink: #2a2620;
+    --kritis: #e0605a;
+    --tinggi: #e0954e;
+    --menengah: #5b9bd9;
+    --normal: #55b088;
+    --kritis-bg: rgba(224,96,90,.13);
+    --tinggi-bg: rgba(224,149,78,.13);
+    --menengah-bg: rgba(91,155,217,.13);
+    --normal-bg: rgba(85,176,136,.13);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:14px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  code, .mono{font-family:'IBM Plex Mono',monospace;}
+  .app{display:flex;min-height:100vh;}
+
+  /* ---- Sidebar ---- */
+  .sidebar{width:220px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;}
+  .brand{padding:22px 20px 16px;border-bottom:1px solid var(--line);}
+  .brand .mark{width:30px;height:8px;background:var(--amber);margin-bottom:10px;border-radius:1px;}
+  .brand h1{font-size:16px;letter-spacing:.2px;color:var(--ink);}
+  .brand p{margin:4px 0 0;font-size:11.5px;color:var(--ink-dim);}
+  nav{padding:14px 10px;flex:1;}
+  nav button{display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:2px;background:none;border:none;border-left:2px solid transparent;color:var(--ink-dim);font-size:13.5px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;border-radius:0 4px 4px 0;transition:background .12s,color .12s;}
+  nav button:hover{background:var(--panel-2);color:var(--ink);}
+  nav button.active{background:var(--panel-2);color:var(--amber);border-left-color:var(--amber);font-weight:500;}
+  .sidebar-foot{padding:14px 20px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-faint);}
+
+  /* ---- Main ---- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .topbar{padding:16px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+  .topbar .info{display:flex;gap:22px;flex-wrap:wrap;}
+  .info .stat{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.5px;}
+  .info .val{font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);display:block;margin-top:2px;}
+  .content{padding:26px 28px;flex:1;overflow-y:auto;}
+
+  /* ---- Upload ---- */
+  .dropzone{max-width:640px;margin:60px auto;padding:48px 32px;border:1.5px dashed var(--line);border-radius:6px;text-align:center;background:var(--panel);cursor:pointer;transition:border-color .15s,background .15s;}
+  .dropzone.drag{border-color:var(--amber);background:var(--panel-2);}
+  .dropzone h2{font-size:19px;margin-bottom:8px;}
+  .dropzone p{color:var(--ink-dim);font-size:13px;line-height:1.6;margin:0 0 18px;}
+  .dropzone .btn{display:inline-block;padding:10px 22px;background:var(--amber);color:#20180a;font-weight:600;border-radius:4px;font-size:13px;}
+  .dropzone input{display:none;}
+  .sample-strip{max-width:640px;margin:0 auto;padding:14px 18px;background:var(--panel-2);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);line-height:1.7;}
+
+  /* ---- Cards / grid ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:22px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;}
+  .card .label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-faint);}
+  .card .num{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;margin-top:6px;color:var(--ink);}
+  .card .sub{font-size:12px;color:var(--ink-dim);margin-top:4px;}
+  .card.accent-kritis .num{color:var(--kritis);}
+  .card.accent-tinggi .num{color:var(--tinggi);}
+  .card.accent-amber .num{color:var(--amber);}
+
+  section.block{margin-bottom:26px;}
+  section.block > h3{font-size:14.5px;color:var(--ink);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+
+  .finding{display:flex;gap:12px;padding:13px 16px;border-radius:6px;margin-bottom:8px;border:1px solid var(--line);background:var(--panel);}
+  .finding .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .finding .dot.kritis{background:var(--kritis);}
+  .finding .dot.tinggi{background:var(--tinggi);}
+  .finding .dot.menengah{background:var(--menengah);}
+  .finding .dot.normal{background:var(--normal);}
+  .finding .body b{color:var(--ink);}
+  .finding .body{font-size:13px;color:var(--ink-dim);line-height:1.55;}
+
+  .badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.2px;}
+  .badge.kritis{background:var(--kritis-bg);color:var(--kritis);}
+  .badge.tinggi{background:var(--tinggi-bg);color:var(--tinggi);}
+  .badge.menengah{background:var(--menengah-bg);color:var(--menengah);}
+  .badge.normal{background:var(--normal-bg);color:var(--normal);}
+  .badge.dev-e{background:rgba(240,169,78,.15);color:var(--amber);}
+  .badge.dev-d{background:rgba(91,155,217,.15);color:var(--menengah);}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;padding:8px 10px;color:var(--ink-faint);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--ink-dim);vertical-align:top;}
+  tr:hover td{background:var(--panel-2);}
+  td.code{font-family:'IBM Plex Mono',monospace;color:var(--ink);}
+
+  /* ---- Timeline ---- */
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  .toolbar input[type=text]{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:9px 12px;border-radius:4px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;}
+  .toolbar select{background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:9px 10px;border-radius:4px;font-size:13px;}
+  .toolbar input:focus,.toolbar select:focus{outline:1px solid var(--amber);}
+
+  .entry{background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:8px;overflow:hidden;}
+  .entry .head{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;}
+  .entry .head:hover{background:var(--panel-2);}
+  .entry .seq{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);width:46px;flex-shrink:0;}
+  .entry .ts{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-dim);width:130px;flex-shrink:0;}
+  .entry .tag{font-size:12.5px;color:var(--ink);flex:1;}
+  .entry .badges{display:flex;gap:6px;flex-shrink:0;}
+  .entry .chev{color:var(--ink-faint);font-size:11px;transition:transform .12s;}
+  .entry.open .chev{transform:rotate(90deg);}
+  .entry .detail{display:none;padding:0 16px 16px 16px;border-top:1px solid var(--line);}
+  .entry.open .detail{display:block;}
+  .rawbox{background:#0f1115;border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#c9d6b8;white-space:pre-wrap;line-height:1.6;margin-top:12px;}
+  .decode{margin-top:12px;padding:12px 14px;border-radius:4px;border:1px solid var(--line);}
+  .decode.kritis{border-color:rgba(224,96,90,.4);background:var(--kritis-bg);}
+  .decode.tinggi{border-color:rgba(224,149,78,.4);background:var(--tinggi-bg);}
+  .decode.menengah{border-color:rgba(91,155,217,.4);background:var(--menengah-bg);}
+  .decode.normal{border-color:rgba(85,176,136,.4);background:var(--normal-bg);}
+  .decode .title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .decode .row{font-size:12.5px;color:var(--ink-dim);margin-top:3px;line-height:1.5;}
+  .cashtable{margin-top:12px;}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--ink-faint);font-size:13px;}
+
+  .subtabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);}
+  .subtabs button{padding:9px 16px;background:none;border:none;color:var(--ink-dim);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'IBM Plex Sans',sans-serif;}
+  .subtabs button.active{color:var(--amber);border-bottom-color:var(--amber);}
+
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{padding:10px 18px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:13px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+  .btn.primary{background:var(--amber);color:#20180a;border-color:var(--amber);font-weight:600;}
+  .btn:hover{filter:brightness(1.08);}
+  .exportcard{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:22px;max-width:480px;margin-bottom:16px;}
+  .exportcard h4{font-size:14px;margin-bottom:6px;}
+  .exportcard p{font-size:12.5px;color:var(--ink-dim);margin:0 0 16px;line-height:1.5;}
+
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
+
+  @media(max-width:780px){
+    .sidebar{width:64px;}
+    .brand p, nav button span.txt{display:none;}
+    .brand h1{font-size:0;}
+    .brand .mark{margin-bottom:0;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="mark"></div>
+      <h1>EJ Log Reader</h1>
+      <p>Diagnosa NCR ATM by Laska</p>
+    </div>
+    <nav id="nav">
+      <button data-tab="ringkasan" class="active"><span class="txt">Ringkasan</span></button>
+      <button data-tab="linimasa"><span class="txt">Linimasa</span></button>
+      <button data-tab="referensi"><span class="txt">Referensi Kode</span></button>
+      <button data-tab="ekspor"><span class="txt">Ekspor</span></button>
+    </nav>
+    <div class="sidebar-foot">M-status Dispenser (E) &amp; Card Reader (D) dibaca dari kamus terpisah.</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div id="topbar-info" class="info">
+        <div class="stat">Belum ada file dimuat</div>
+      </div>
+      <div class="btn-row" id="topbar-actions" style="display:none;">
+        <button class="btn" id="btn-reload">Muat File Lain</button>
+      </div>
+    </div>
+    <div class="content" id="content">
+      <!-- injected -->
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".txt,.log,.217,.json,*" style="display:none;">
+
+<script>
+/* ============================= REFERENCE DATA ============================= */
+
+const DEVICE_NAMES = {
+  A:'Time of Day Clock (Jam)', B:'Power Failure (Gangguan Listrik)',
+  C:'Card Reader/Writer', D:'Card Reader/Writer (Pembaca Kartu)',
+  E:'Currency Dispenser (Mesin Dispense Uang)', F:'Depository (Setor Tunai)',
+  G:'Receipt Printer', H:'Journal Printer', I:'Validation Printer',
+  J:'Vandal Guard', K:'Night Safe Depository', L:'Encryptor (EPP)',
+  M:'Camera', N:'Door Access', O:'Flex Disk', P:'Sensor',
+  Q:'Touch Screen', R:'Supervisor Keys', V:'Statement Printer', Y:'Coin Dispenser'
+};
+
+// Currency Dispenser (device E) — M-bb dictionary, from Panduan_NCR_ATM_Error_Indonesia.docx §4.2
+const DISPENSER_M = {
+'00':{p:'normal',part:'—',c:'Tidak ada error – sistem berjalan normal',a:'Tidak diperlukan tindakan'},
+'01':{p:'tinggi',part:'Kaset (Cassette)',c:'Pick diminta dari kaset yang tidak terpasang',a:'Pasang kaset yang sesuai; lakukan reset ATM'},
+'02':{p:'tinggi',part:'Sensor LVDT/NTS, Kualitas Uang di Kaset',c:'Terlalu banyak uang yang ditolak (reject) – terlalu kecil, ganda, atau gagal belajar parameter',a:'Bersihkan sensor LVDT/NTS; jalankan Learn Bill Parameters; periksa kondisi uang dalam kaset'},
+'03':{p:'tinggi',part:'Pick Module (Roller & Sensor Pick)',c:'Pick failure – gagal mengambil uang dari kaset',a:'Bersihkan roller pick dan sensor pick; periksa kondisi kaset'},
+'04':{p:'kritis',part:'Pick Module & Kaset (stok kosong/hampir kosong)',c:'Pick failure + kaset hampir kosong atau kosong',a:'ISI ULANG kaset segera; setelah isi ulang lakukan reset ATM'},
+'05':{p:'kritis',part:'Sensor Transport (TSEN 1-8), Transport Utama',c:'Sensor gagal ATAU uang macet di transport utama',a:'Buka unit, periksa & bersihkan jalur transport; bersihkan sensor TSEN 1-8'},
+'06':{p:'tinggi',part:'Divert Gate (solenoid & sensor gate)',c:'Divert gate failure – posisi awal salah atau gagal bergerak',a:'Periksa mekanisme divert gate; bersihkan sensor gate; uji solenoid gate'},
+'07':{p:'kritis',part:'Reject Bin / Purge Bin',c:'Reject bin / Purge bin tidak terpasang – unit INOPERATIVE',a:'Pasang reject bin dengan benar hingga terkunci; lakukan reset'},
+'08':{p:'kritis',part:'Reject Bin, Sensor Overfill',c:'Reject bin penuh ATAU sensor overfill tersumbat – unit INOPERATIVE',a:'Kosongkan reject bin; bersihkan sensor overfill; lakukan reset'},
+'09':{p:'kritis',part:'Modul Komunikasi Dispenser (kabel/firmware)',c:'Kegagalan komunikasi di dispenser',a:'Periksa kabel komunikasi; lakukan power cycle; periksa firmware'},
+'10':{p:'kritis',part:'SOH (State of Health) Dispenser — status sistem, bukan satu komponen fisik; akar masalah ada di modul lain yang gagal FATAL sebelumnya',c:'Operasi tidak dilakukan karena kegagalan FATAL dari operasi sebelumnya',a:'Reset SOH ke HEALTHY melalui supervisor software; identifikasi dan perbaiki root cause'},
+'11':{p:'tinggi',part:'Transport (jalur uang tersisa dari operasi sebelumnya)',c:'Uang masih tersusun di transport dari operasi sebelumnya',a:'Lakukan perintah CLEAR atau DIAG_CLEAR; periksa & bersihkan transport'},
+'12':{p:'tinggi',part:'Presenter (mekanisme clamp)',c:'Mekanisme clamp presenter macet atau gagal',a:'Bersihkan area clamp; periksa hambatan fisik; uji motor clamp presenter'},
+'13':{p:'kritis',part:'Exit Shutter (macet TERBUKA), Motor/Solenoid Shutter',c:'Exit shutter macet dalam posisi TERBUKA',a:'Periksa hambatan fisik pada shutter; uji motor/solenoid shutter; ganti jika rusak'},
+'14':{p:'kritis',part:'Exit Shutter (macet TERTUTUP), Sensor Closed Shutter',c:'Exit shutter macet dalam posisi TERTUTUP',a:'Bersihkan rel shutter; periksa sensor closed; ganti unit shutter jika diperlukan'},
+'15':{p:'menengah',part:'Sensor Overfill, Transport',c:'Uang terdeteksi melewati sensor overfill',a:'Periksa jalur transport; cek sensor overfill dari kotoran'},
+'16':{p:'kritis',part:'Timing Disk & Motor AC Transport Utama',c:'Timing disk transport utama atau motor AC utama gagal',a:'Periksa timing disk (retak/kotor); bersihkan sensor timing; uji & ganti motor AC'},
+'17':{p:'tinggi',part:'Exit Sensor',c:'Exit sensor gagal clear atau tersumbat',a:'Bersihkan sensor exit; periksa ada uang tertinggal di slot keluaran'},
+'18':{p:'kritis',part:'Presenter Transport, Sensor Presenter',c:'Uang macet di transport presenter ATAU sensor presenter gagal',a:'Buka dan bersihkan presenter transport; cek semua sensor presenter; lakukan CLEAR'},
+'19':{p:'tinggi',part:'Exit Sensor, Slot Keluaran',c:'Exit sensor tersumbat – uang mungkin masih di slot keluaran',a:'Periksa dan ambil uang dari slot; bersihkan sensor exit; verifikasi replenishment data'},
+'20':{p:'tinggi',part:'Konfigurasi Dispenser (Bill Parameters)',c:'Dispenser tidak dikonfigurasi',a:'Lakukan konfigurasi awal dispenser; jalankan Learn Bill Parameters'},
+'21':{p:'kritis',part:'Modul Keamanan (Security)',c:'Security violation – pelanggaran keamanan terdeteksi',a:'HUBUNGI TIM KEAMANAN SEGERA; dokumentasikan kejadian; periksa adanya tamper'},
+'22':{p:'kritis',part:'Modul Keamanan (Security Inhibition)',c:'Security inhibition – proteksi keamanan aktif',a:'Verifikasi status keamanan bersama tim security; hubungi NCR Security'},
+'25':{p:'normal',part:'Flex Disk',c:'Flex disk authorization tidak diperlukan',a:'Informasi saja; tidak perlu tindakan'},
+'28':{p:'kritis',part:'NVRAM, Board Kontrol',c:'Area NVRAM tidak dapat diakses – SOH tidak dapat diperbarui',a:'Lakukan power cycle; jika berlanjut, kemungkinan perlu penggantian board kontrol'},
+'29':{p:'kritis',part:'Timing Disk & Motor Presenter',c:'Timing disk transport presenter atau motor presenter gagal',a:'Periksa timing disk presenter; bersihkan sensor timing; uji dan ganti motor presenter'},
+'30':{p:'tinggi',part:'Sensor Transport Presenter',c:'Sensor transport presenter tersumbat atau gagal',a:'Identifikasi sensor dari M_DATA; bersihkan atau ganti sensor yang bermasalah'},
+'31':{p:'kritis',part:'Execution Processor Board (80652)',c:'Heartbeat pada execution processor gagal (80652)',a:'Lakukan power cycle; periksa execution processor board; ganti board jika perlu'},
+'33':{p:'kritis',part:'I2C Bus (80852) / Sensor Anti-Fluditi',c:'Kegagalan komunikasi pada I2C bus (80852) atau aktivasi serangan Fluditi',a:'Periksa koneksi I2C; power cycle; JIKA FLUDITI: hubungi NCR Security segera'},
+'34':{p:'tinggi',part:'Sensor Stack Transport, Presenter',c:'Present/retract dilakukan tanpa kondisi uang yang sesuai (tidak ada stack/present)',a:'Verifikasi urutan operasi; periksa sensor stack transport; verifikasi logika host'},
+'35':{p:'tinggi',part:'Interlock Pintu ATM',c:'Operasi tidak selesai karena interlock pintu ATM terbuka',a:'Tutup pintu ATM; lakukan CLEAR; operasikan ulang'},
+'36':{p:'normal',part:'Pick Valve (kondisi test, kaset masih terpasang)',c:'Pick valve test tidak dilakukan karena kaset masih terpasang',a:'Lepas semua kaset sebelum menjalankan pick valve test'},
+'37':{p:'normal',part:'Tamper Indicating (TI) Service',c:'TI (Tamper Indicating) service diaktifkan (ON)',a:'Mode TI aktif untuk sesi service; matikan TI setelah pekerjaan selesai'},
+'38':{p:'normal',part:'Tamper Indicating (TI) Service',c:'TI (Tamper Indicating) service dinonaktifkan (OFF)',a:'TI service dimatikan; unit kembali ke operasi normal'},
+'39':{p:'kritis',part:'Sensor LVDT/NTS',c:'LVDT atau rangkaian terkait mengalami malfungsi',a:'Bersihkan sensor LVDT/NTS; re-learn bill parameters; ganti sensor jika rusak'},
+'40':{p:'tinggi',part:'NVRAM, Parameter Uang (Bill Parameters)',c:'Parameter uang belum dikonfigurasi (NVRAM corruption atau power-up pertama)',a:'Jalankan prosedur Learn Bill Parameters; atur bill widths dan singularitas; simpan ke NVRAM'},
+'41':{p:'menengah',part:'Pick Module (kaset dinonaktifkan untuk replenishment)',c:'Percobaan pick dari kaset yang dinonaktifkan untuk replenishment in-service',a:'Aktifkan kembali pick module setelah proses replenishment selesai'},
+'146':{p:'kritis',part:'SDC Link, Board Komunikasi',c:'SDC link failure – kegagalan link komunikasi SDC',a:'Periksa dan bersihkan koneksi SDC; lakukan power cycle; ganti SDC board jika perlu'},
+};
+const TXN_DIGIT1 = {
+'0':'Dispense BERHASIL sepenuhnya – tidak ada masalah',
+'1':'Dispense berhasil NAMUN ada pengecualian (jumlah lebih sedikit dari permintaan)',
+'2':'Jumlah uang yang didispense LEBIH SEDIKIT dari yang diminta',
+'3':'Tidak ada uang yang didispense SAMA SEKALI',
+'4':'Dispense bermasalah – jumlah uang yang keluar TIDAK DIKETAHUI',
+'5':'Tidak ada uang yang didispense ATAU kartu tidak dikeluarkan sebelum dispense',
+'6':'Sebagian/semua uang TIDAK DIAMBIL nasabah dan sudah ditarik kembali ke reject bin',
+};
+
+// Card Reader/Writer (device D) — IMCRW/UMCRW M_STATUS dictionary, from NCR_CardReader_Error_Codes.xlsx
+const CARDREADER_M = {
+'00':{scope:'Semua',c:'Tidak ada error – operasi berhasil',part:'—',p:'normal',a:'Tidak diperlukan tindakan. Sistem normal.'},
+'01':{scope:'Semua',c:'Track kosong (blank) – tidak ada data pada track magnetik',part:'Track Magnetik Kartu / Head Baca',p:'tinggi',a:'Minta nasabah menggunakan kartu berbeda; bersihkan head baca dengan kartu pembersih; periksa head baca jika berlanjut.'},
+'02':{scope:'Semua',c:'Track tidak didukung / SCIF write tidak didukung',part:'Head Magnetik / SCIF Module',p:'menengah',a:'Periksa konfigurasi track yang didukung; untuk SCIF verifikasi firmware mendukung write.'},
+'03':{scope:'Semua',c:'Read error – kesalahan baca data magnetik',part:'Head Baca Magnetik, Track Kartu',p:'tinggi',a:'Bersihkan head baca; minta kartu lain; ganti head baca jika berulang.'},
+'04':{scope:'Semua',c:'Write error – kesalahan tulis data',part:'Head Tulis Magnetik',p:'tinggi',a:'Bersihkan head tulis; verifikasi kartu mendukung HiCo write; ganti head tulis jika perlu.'},
+'05':{scope:'Semua',c:'Tidak ada kartu di reader (posisi stage) saat perintah diterima',part:'Sensor Kartu (PD1/PD2/PD3), Throat',p:'menengah',a:'Pastikan kartu dimasukkan sepenuhnya; bersihkan sensor kartu; periksa mekanisme throat.'},
+'06':{scope:'Semua',c:'Kartu diambil nasabah saat proses capture berlangsung',part:'Sensor Kartu, Mekanisme Capture',p:'tinggi',a:'Periksa sensor kartu; jika berulang, kemungkinan tamper — verifikasi log keamanan.'},
+'07':{scope:'Semua',c:'Shutter macet terbuka setelah kartu di-stage',part:'Exit Shutter, Sensor Shutter',p:'kritis',a:'Periksa hambatan fisik shutter; bersihkan mekanisme; uji motor/solenoid; ganti unit jika rusak.'},
+'08':{scope:'Semua',c:'Kegagalan switch shutter terdeteksi',part:'Switch Shutter',p:'tinggi',a:'Bersihkan switch shutter; periksa koneksi kabel; ganti switch jika rusak.'},
+'09':{scope:'Semua',c:'Pemulihan error berhasil – kartu tidak valid telah di-eject',part:'Mekanisme Eject, Sensor Kartu',p:'normal',a:'Informasi saja. Monitor frekuensi kejadian.'},
+'10':{scope:'Semua',c:'Shutter macet tertutup – saat entry atau eject',part:'Exit Shutter, Sensor Shutter',p:'kritis',a:'Periksa hambatan fisik shutter; bersihkan rel; uji sensor closed; ganti unit jika perlu.'},
+'11':{scope:'Semua',c:'Kartu macet (jam) – atau kartu tidak valid di throat saat startup',part:'Throat, Mekanisme Transport Kartu',p:'kritis',a:'Buka akses card reader; keluarkan kartu macet dengan hati-hati; bersihkan jalur; lakukan CLEAR/Reset.'},
+'12':{scope:'Semua',c:'Kartu ter-capture setelah gagal eject',part:'Mekanisme Eject/Capture, Capture Bin',p:'tinggi',a:'Keluarkan kartu dari capture bin; bersihkan mekanisme eject; verifikasi motor eject.'},
+'13':{scope:'Semua',c:'Kemungkinan sabotase nasabah – kartu macet di throat, tidak bisa ditarik masuk',part:'Throat, Sensor Tamper',p:'kritis',a:'PERINGATAN KEAMANAN: periksa benda asing/skimmer di slot; dokumentasikan; hubungi tim keamanan.'},
+'14':{scope:'Semua',c:'Terlalu banyak read error atau blank track berturut-turut',part:'Head Baca Magnetik, Sensor',p:'kritis',a:'Bersihkan head baca; periksa kondisi fisik; ganti head baca jika aus.'},
+'15':{scope:'Semua',c:'Terlalu banyak write error berturut-turut',part:'Head Tulis Magnetik',p:'kritis',a:'Bersihkan head tulis; periksa tegangan supply; ganti head tulis jika rusak.'},
+'16':{scope:'Semua',c:'Terlalu banyak card jam berturut-turut',part:'Mekanisme Transport Kartu, Roller',p:'kritis',a:'Bersihkan jalur transport menyeluruh; ganti roller aus; pastikan jalur bersih.'},
+'17':{scope:'Semua',c:'Terlalu banyak shutter macet tertutup berturut-turut (bukan shutter test)',part:'Shutter, Motor/Solenoid Shutter',p:'kritis',a:'Bersihkan mekanisme shutter menyeluruh; lumasi engsel; ganti unit shutter.'},
+'18':{scope:'Semua',c:'Kartu macet saat capture – gagal eject',part:'Mekanisme Capture/Eject',p:'kritis',a:'Buka akses card reader; keluarkan kartu manual; bersihkan jalur capture; reset unit.'},
+'19':{scope:'Semua',c:'Terlalu banyak kartu tidak valid berturut-turut',part:'Sensor Validasi Kartu, Head Baca',p:'kritis',a:'Bersihkan sensor dan head baca; periksa sabotase/skimmer; verifikasi konfigurasi validasi.'},
+'20':{scope:'Semua',c:'Perangkat masih dalam status inoperative (bukan diagnostik)',part:'Unit Card Reader keseluruhan',p:'kritis',a:'Selesaikan penyebab error sebelumnya; reset/power cycle; hubungi NCR Support jika masih inoperative.'},
+'21':{scope:'Semua',c:'Tidak ada kartu yang dimasukkan dalam 10 detik (timeout)',part:'Sensor Kartu (PD1/PD2)',p:'normal',a:'Timeout normal, tidak diperlukan tindakan jika nasabah tidak memasukkan kartu.'},
+'22':{scope:'Semua',c:'Kecepatan transport kartu di luar spesifikasi – terlalu cepat',part:'Motor Transport Kartu, Timing',p:'tinggi',a:'Periksa tegangan motor; kalibrasi kecepatan; ganti motor jika tidak dapat dikalibrasi.'},
+'23':{scope:'Semua',c:'Kecepatan dalam +3% (sedikit di atas batas)',part:'Motor Transport Kartu',p:'normal',a:'Monitor; kalibrasi motor jika berlanjut.'},
+'24':{scope:'Semua',c:'Kecepatan dalam ±1% (normal/optimal)',part:'Motor Transport Kartu',p:'normal',a:'Normal, tidak diperlukan tindakan.'},
+'25':{scope:'Semua',c:'Kecepatan dalam -3% (sedikit di bawah batas)',part:'Motor Transport Kartu',p:'normal',a:'Monitor; kalibrasi motor jika berlanjut.'},
+'26':{scope:'Semua',c:'Kecepatan transport kartu di luar spesifikasi – terlalu lambat',part:'Motor Transport Kartu, Beban Mekanis',p:'tinggi',a:'Periksa beban mekanis/roller tersumbat; bersihkan jalur; kalibrasi atau ganti motor.'},
+'27':{scope:'Semua',c:'Kartu tidak valid terdeteksi',part:'Sensor Validasi, Head Baca',p:'menengah',a:'Bersihkan sensor; pastikan kartu ISO standar; periksa konfigurasi tipe kartu.'},
+'28':{scope:'Semua',c:'Fraud throat mendeteksi hambatan atau kegagalan fraud throat',part:'Fraud Throat / Anti-Skimming',p:'kritis',a:'PERINGATAN KEAMANAN: periksa benda asing/skimmer; bersihkan fraud throat; ganti modul jika rusak.'},
+'29':{scope:'Semua',c:'Terdeteksi fraud kartu dimasukkan secara manual',part:'Anti-Skimming, Sensor Deteksi',p:'kritis',a:'PERINGATAN KEAMANAN: periksa alat skimming; hubungi tim keamanan; dokumentasikan.'},
+'30':{scope:'Semua',c:'MM (Magnetic Measurement) tidak valid',part:'MM Sensor, Mekanisme Pengukuran',p:'tinggi',a:'Bersihkan sensor MM; lakukan CIM Service Test; kalibrasi posisi sensor.'},
+'31':{scope:'Semua',c:'MM Module rusak/defektif',part:'MM Module Board',p:'kritis',a:'Lakukan CIM Self Test; ganti MM module jika gagal.'},
+'33':{scope:'Semua',c:'CIM/MM service test gagal ATAU contact unit failure (Smart command)',part:'CIM/MM Module, Contact Unit Smart Card',p:'kritis',a:'Ulangi CIM Service Test; periksa mekanisme kontak smart card; ganti komponen rusak.'},
+'34':{scope:'Semua',c:'Kegagalan komunikasi CIM/MM module – service test',part:'CIM/MM Module, Kabel Komunikasi',p:'kritis',a:'Periksa koneksi kabel; reset module; ganti CIM/MM module jika perlu.'},
+'35':{scope:'Semua',c:'Error pada data track 3 – CIM/MM',part:'Track 3, Head Baca Track 3',p:'tinggi',a:'Bersihkan head baca track 3; verifikasi format data track 3.'},
+'37':{scope:'Semua',c:'Fitur CROPF tidak didukung (diagnostik)',part:'CROPF Feature, Firmware',p:'normal',a:'Verifikasi versi firmware yang mendukung CROPF; update jika perlu.'},
+'38':{scope:'Semua',c:'LFCC bin hampir penuh / penuh',part:'LFCC Bin',p:'tinggi',a:'Kosongkan LFCC bin segera dengan prosedur yang benar.'},
+'40':{scope:'Semua',c:'LFCC bin dilepas atau tidak dikonfigurasi',part:'LFCC Bin',p:'tinggi',a:'Pasang LFCC bin dengan benar; konfigurasi di software supervisor.'},
+'41':{scope:'Semua',c:'Kegagalan fitur CROPF – format perintah tidak valid (diagnostik)',part:'CROPF Module, Firmware',p:'menengah',a:'Periksa format perintah CROPF; update firmware jika perlu.'},
+'42':{scope:'UMCRW',c:'Perangkat tidak terotorisasi (khusus UIMCRW)',part:'Modul Otorisasi, Sertifikat',p:'kritis',a:'Lakukan prosedur otorisasi ulang; hubungi NCR Support.'},
+'50':{scope:'Smart',c:'Smart/SAM/Memory card tidak pada posisi stage SCRW yang benar',part:'SCRW Stage Mechanism, Sensor Posisi',p:'tinggi',a:'Periksa mekanisme stage smart card; bersihkan sensor posisi; reset dan coba lagi.'},
+'51':{scope:'Smart',c:'Kontak smart card diturunkan – tidak bisa capture',part:'Contact Unit Smart Card',p:'kritis',a:'Periksa mekanisme kontak; bersihkan contact block; ganti contact unit jika rusak.'},
+'52':{scope:'Smart',c:'Error kode perintah smart/SAM/memory card tidak valid – atau transmission error',part:'Smart Card Interface, SCIF',p:'tinggi',a:'Verifikasi kode perintah smart card; periksa koneksi SCIF; reset modul.'},
+'53':{scope:'Smart',c:'Error data perintah smart card tidak valid – atau switched off',part:'Smart Card, SCIF',p:'tinggi',a:'Verifikasi data perintah; periksa apakah kartu masih tertancap dengan benar.'},
+'54':{scope:'Smart',c:'SCIF tidak dikonfigurasi / tidak merespons – atau parameter kartu tidak valid',part:'SCIF Module, Konfigurasi',p:'kritis',a:'Periksa konfigurasi SCIF; reset modul; verifikasi tipe kartu yang didukung.'},
+'55':{scope:'Smart',c:'Timeout respons SCIF terlampaui',part:'SCIF Module, Kartu Smart',p:'tinggi',a:'Periksa koneksi SCIF; coba kartu smart card lain; reset modul SCIF.'},
+'56':{scope:'Smart',c:'Reader dalam mode Smart/SAM/Memory (SCRW) – bukan mode MCRW',part:'Mode Operasi Reader',p:'menengah',a:'Pastikan perintah sesuai mode reader saat ini; keluar dari mode SCRW dahulu.'},
+'57':{scope:'Smart',c:'Panjang respons smart card tidak valid',part:'Smart Card, SCIF',p:'menengah',a:'Periksa protokol komunikasi smart card; verifikasi tipe kartu.'},
+'65':{scope:'Smart',c:'Format perintah smart card tidak valid',part:'SCIF, Firmware',p:'menengah',a:'Verifikasi format perintah EMV/smart card; periksa versi firmware.'},
+'77':{scope:'Smart',c:'Contact unit failure',part:'Contact Unit Smart Card',p:'kritis',a:'Periksa mekanisme kontak smart card; bersihkan contact pins; ganti contact unit.'},
+'78':{scope:'Smart',c:'Kegagalan pergerakan smart/SAM/memory card',part:'Motor Transport Smart Card',p:'kritis',a:'Periksa hambatan fisik jalur smart card; uji motor pergerakan; ganti jika rusak.'},
+'79':{scope:'Smart',c:'Kegagalan switch off smart/SAM/memory card',part:'Sirkuit Power Smart Card',p:'tinggi',a:'Periksa sirkuit power; reset modul; ganti SCIF board jika perlu.'},
+'80':{scope:'Smart',c:'Smart card dilepas (removed error)',part:'Sensor Kartu Smart, Contact Unit',p:'menengah',a:'Kartu dilepas saat operasi berlangsung; minta nasabah tidak mencabut kartu selama proses.'},
+'81':{scope:'Smart',c:'Tidak ada respons dari smart card',part:'Smart Card, Contact Unit',p:'tinggi',a:'Pastikan kontak bersih; coba kartu berbeda; periksa power supply smart card interface.'},
+'82':{scope:'Smart',c:'Error transmisi smart card',part:'Smart Card Interface, Kabel',p:'tinggi',a:'Periksa koneksi kabel interface; bersihkan kontak kartu; reset SCIF.'},
+'83':{scope:'Smart',c:'Smart card dalam kondisi switched off',part:'Smart Card Power Circuit',p:'menengah',a:'Reset power ke smart card; lakukan Power On ulang.'},
+'84':{scope:'Smart',c:'Tipe atau parameter smart card illegal',part:'Konfigurasi Smart Card, Tipe Kartu',p:'menengah',a:'Verifikasi tipe kartu yang didukung; perbarui konfigurasi jika perlu.'},
+'87':{scope:'CIM',c:'CIM self test gagal',part:'CIM Module',p:'kritis',a:'Ulangi CIM Self Test; periksa modul secara fisik; ganti jika gagal.'},
+'88':{scope:'CIM',c:'CIM security module rusak/defektif',part:'CIM Security Module',p:'kritis',a:'Ganti CIM security module; pastikan prosedur keamanan diikuti.'},
+'89':{scope:'CIM',c:'Kegagalan komunikasi CIM security module',part:'CIM Security Module, Kabel Komunikasi',p:'kritis',a:'Periksa koneksi kabel; reset modul; ganti jika perlu.'},
+'90':{scope:'CIM',c:'CIM Interface PCB rusak/defektif',part:'CIM Interface PCB',p:'kritis',a:'Ganti CIM Interface PCB.'},
+'91':{scope:'CIM',c:'Kegagalan komunikasi CIM Interface PCB',part:'CIM Interface PCB, Kabel',p:'kritis',a:'Periksa koneksi kabel; reset; ganti CIM Interface PCB.'},
+'96':{scope:'UMCRW',c:'Komunikasi perangkat inoperative (khusus UIMCRW)',part:'Kabel Komunikasi USB/RS232, Port',p:'kritis',a:'Periksa koneksi USB/RS232; coba port lain; power cycle; ganti kabel.'},
+'97':{scope:'UMCRW',c:'Komunikasi perangkat operative (khusus UIMCRW)',part:'Komunikasi USB/RS232',p:'normal',a:'Koneksi telah pulih. Monitor stabilitas koneksi.'},
+'98':{scope:'UMCRW',c:'Perangkat terhubung kembali – state hilang (khusus UIMCRW)',part:'Koneksi USB/RS232, Power',p:'tinggi',a:'State hilang akibat koneksi terputus; inisialisasi ulang; verifikasi konfigurasi.'},
+'99':{scope:'UMCRW',c:'Perangkat terhubung kembali sebagai perangkat baru – SOH/Tallies dikosongkan',part:'Koneksi USB, SOH, Tallies',p:'tinggi',a:'Perangkat baru terdeteksi; konfigurasi ulang; semua tallies telah di-reset.'},
+};
+
+const PRIORITY_LABEL = {kritis:'Kritis', tinggi:'Tinggi', menengah:'Menengah', normal:'Normal/Info'};
+
+/* ============================= PARSER ============================= */
+
+function cleanText(raw){
+  return raw
+    .replace(/\x1B(?:\[[0-9]*[A-Za-z]|\([0-9A-Za-z]|[A-Za-z])/g,'')
+    .replace(/\r/g,'\n')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');
+}
+
+function decodeR(r){
+  if(!r) return null;
+  const d = r.padStart(5,'0').split('').map(Number);
+  const bin = d[0]===4?{lvl:'kritis',txt:'Reject bin PENUH – segera kosongkan!'}:{lvl:'normal',txt:'Reject bin tidak penuh (normal)'};
+  const kasetTxt = v=>({0:'Tidak ada status baru',1:'Stok CUKUP',2:'HAMPIR HABIS – jadwalkan pengisian',3:'HABIS – isi ulang segera!'}[v]||'—');
+  const kasetLvl = v=>({0:'normal',1:'normal',2:'tinggi',3:'kritis'}[v]||'normal');
+  return {
+    bin,
+    kaset: [1,2,3,4].map(i=>({no:i, val:d[i], txt:kasetTxt(d[i]), lvl:kasetLvl(d[i])}))
+  };
+}
+
+function decodeTxnField(device, aaa){
+  if(device==='E' && aaa && aaa.length>=1){
+    const digit1 = aaa[0];
+    const sheets = [aaa.substr(1,2),aaa.substr(3,2),aaa.substr(5,2),aaa.substr(7,2)];
+    return {kind:'dispenser', digit1, meaning: TXN_DIGIT1[digit1]||('Kode tidak dikenal: '+digit1), sheets};
+  }
+  return null;
+}
+
+function parseLog(raw){
+  const clean = cleanText(raw);
+  const lines = clean.split('\n');
+  const headerRe = /^\*(\d+)\*(\d{2}\/\d{2}\/\d{4})\*(\d{2}:\d{2})\*$/;
+  let entries = [];
+  let current = null;
+  for(const line of lines){
+    const trimmed = line.trim();
+    const m = headerRe.exec(trimmed);
+    if(m){
+      current = {seq:m[1], date:m[2], time:m[3], raw:[], events:[]};
+      entries.push(current);
+    } else if(current && trimmed !== ''){
+      current.raw.push(line.replace(/\s+$/,''));
+    }
+  }
+
+  const statusRe = /\*(\d{1,4})?\*(\d)\*([A-Z])\*([^\n,]*),M-(\d*)(?:,R-(\d+))?/g;
+  const cardRe = /MSA\w*\$(\d{14})\$(\w+)\$(\S+)/g;
+
+  entries.forEach(e=>{
+    const text = e.raw.join('\n');
+    statusRe.lastIndex = 0;
+    let sm;
+    while((sm = statusRe.exec(text)) !== null){
+      const device = sm[3];
+      const hasCode = sm[5] !== '';
+      const code = hasCode ? sm[5].padStart(2,'0') : null;
+      let dict = null;
+      if(device==='E') dict = DISPENSER_M;
+      else if(device==='D' || device==='C') dict = CARDREADER_M;
+      const info = (hasCode && dict) ? dict[code] : null;
+      e.events.push({
+        type:'status', tttt: sm[1]||null, mtype: sm[2], device,
+        deviceName: DEVICE_NAMES[device] || ('Kode perangkat '+device),
+        aaa: sm[4], code, r: sm[6]||null, info,
+        txn: decodeTxnField(device, sm[4]),
+        rInfo: sm[6] ? decodeR(sm[6]) : null
+      });
+    }
+    cardRe.lastIndex = 0;
+    let cm;
+    while((cm = cardRe.exec(text)) !== null){
+      e.events.push({type:'card', ts:cm[1], action:cm[2], pan:cm[3]});
+    }
+    e.isTxnStart = /TRANSACTION START/.test(text);
+    e.isTxnEnd = /TRANSACTION END/.test(text);
+    e.isSupervisorEntry = /SUPERVISOR MODE ENTRY/.test(text);
+    e.isSupervisorExit = /SUPERVISOR MODE EXIT/.test(text);
+    e.isPowerUp = /POWER-UP\/RESET/.test(text);
+    e.isCardReaderActivated = /PRIMARY CARD READER ACTIVATED/.test(text);
+    e.isCustomerCancelled = /CUSTOMER CANCELLED/.test(text);
+    e.isHostTimeout = /HOST TX TIMEOUT/.test(text);
+    const initMatches = text.match(/CARD INITIALISE ATTEMPT = \d/g);
+    e.cardInitAttempts = initMatches ? initMatches.length : 0;
+    const cashM = text.match(/DENOMINATION\s+([\d\s]+)\nDISPENSED\s+([\d\s]+)\nREJECTED\s+([\d\s]+)\nREMAINING\s+([\d\s]+)/);
+    if(cashM){
+      e.cash = {
+        denom: cashM[1].trim().split(/\s+/),
+        dispensed: cashM[2].trim().split(/\s+/),
+        rejected: cashM[3].trim().split(/\s+/),
+        remaining: cashM[4].trim().split(/\s+/),
+      };
+    }
+    // simple classification tag for filtering
+    if(e.isTxnStart) e.cls = 'transaksi';
+    else if(e.isSupervisorEntry || e.isSupervisorExit) e.cls = 'supervisor';
+    else if(e.isPowerUp || e.isCardReaderActivated) e.cls = 'sistem';
+    else if(e.events.some(ev=>ev.type==='status')) e.cls = 'status';
+    else e.cls = 'lain';
+  });
+
+  return entries;
+}
+
+function summarize(entries){
+  const statusEvents = [];
+  entries.forEach(e=>e.events.forEach(ev=>{ if(ev.type==='status') statusEvents.push({...ev, seq:e.seq, date:e.date, time:e.time}); }));
+  const dispenserEvents = statusEvents.filter(e=>e.device==='E');
+  const cardEvents = statusEvents.filter(e=>e.device==='D'||e.device==='C');
+  const otherEvents = statusEvents.filter(e=>!['E','D','C'].includes(e.device));
+  const txnCount = entries.filter(e=>e.isTxnStart).length;
+  const powerUps = entries.filter(e=>e.isPowerUp);
+  const supervisorEntries = entries.filter(e=>e.isSupervisorEntry);
+  const cancelled = entries.filter(e=>e.isCustomerCancelled).length;
+  const emvFallback = entries.filter(e=>e.cardInitAttempts>=3);
+
+  function groupBy(arr, key){
+    const m = {};
+    arr.forEach(x=>{ const k = key(x); (m[k] = m[k]||[]).push(x); });
+    return m;
+  }
+  const dispenserByCode = groupBy(dispenserEvents, e=>e.code);
+  const cardByCode = groupBy(cardEvents, e=>e.code);
+
+  return {
+    entries, statusEvents, dispenserEvents, cardEvents, otherEvents,
+    txnCount, powerUps, supervisorEntries, cancelled, emvFallback,
+    dispenserByCode, cardByCode,
+    dateStart: entries.length ? {date:entries[0].date, time:entries[0].time} : null,
+    dateEnd: entries.length ? {date:entries[entries.length-1].date, time:entries[entries.length-1].time} : null,
+  };
+}
+
+/* ============================= STATE & RENDER ============================= */
+
+let STATE = { entries: [], sum: null, tab: 'ringkasan', filter: 'all', search: '', refTab: 'dispenser' };
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function badgeHTML(p){ return `<span class="badge ${p}">${PRIORITY_LABEL[p]||p}</span>`; }
+
+function loadFile(file){
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const entries = parseLog(ev.target.result);
+    STATE.entries = entries;
+    STATE.sum = summarize(entries);
+    STATE.fileName = file.name;
+    renderTopbar();
+    renderTab();
+  };
+  reader.readAsText(file);
+}
+
+function renderTopbar(){
+  const info = $('#topbar-info');
+  const actions = $('#topbar-actions');
+  if(!STATE.sum){
+    info.innerHTML = `<div class="stat">Belum ada file dimuat</div>`;
+    actions.style.display = 'none';
+    return;
+  }
+  const s = STATE.sum;
+  info.innerHTML = `
+    <div><div class="stat">File</div><div class="val">${esc(STATE.fileName)}</div></div>
+    <div><div class="stat">Periode</div><div class="val">${s.dateStart.date} ${s.dateStart.time} &rarr; ${s.dateEnd.date} ${s.dateEnd.time}</div></div>
+    <div><div class="stat">Total Transaksi</div><div class="val">${s.txnCount}</div></div>
+    <div><div class="stat">Total Entri Log</div><div class="val">${s.entries.length}</div></div>
+  `;
+  actions.style.display = 'flex';
+}
+
+function renderTab(){
+  const c = $('#content');
+  if(!STATE.sum){
+    c.innerHTML = renderUpload();
+    attachUploadHandlers();
+    return;
+  }
+  if(STATE.tab === 'ringkasan') c.innerHTML = renderRingkasan();
+  else if(STATE.tab === 'linimasa'){ c.innerHTML = renderLinimasaShell(); renderLinimasaList(); attachLinimasaHandlers(); }
+  else if(STATE.tab === 'referensi') { c.innerHTML = renderReferensiShell(); renderReferensiTable(); }
+  else if(STATE.tab === 'ekspor') c.innerHTML = renderEkspor();
+}
+
+function renderUpload(){
+  return `
+  <div class="dropzone" id="dropzone">
+    <h2>Muat File EJ Log NCR</h2>
+    <p>Seret file journal log (mis. EJMSA048.217) ke sini, atau klik untuk memilih file.<br>
+    Berlaku untuk format EJ APTRA Advance / NDC+, ekstensi apa pun.</p>
+    <div class="btn">Pilih File</div>
+  </div>
+  <div class="sample-strip">
+    Contoh baris yang dikenali parser:<br>
+    &nbsp;&nbsp;*1263*2*E*400000000,M-10,R-10200 &nbsp;→ Dispenser (E)<br>
+    &nbsp;&nbsp;*1271*1*D*9,M-81,R-0 &nbsp;→ Card Reader (D)
+  </div>`;
+}
+
+function attachUploadHandlers(){
+  const dz = $('#dropzone');
+  const input = $('#fileInput');
+  dz.addEventListener('click', ()=>input.click());
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault(); dz.classList.remove('drag');
+    if(e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+  });
+}
+
+/* ---- Ringkasan ---- */
+function renderRingkasan(){
+  const s = STATE.sum;
+  const dispCritical = s.dispenserEvents.filter(e=>e.info && e.info.p==='kritis').length;
+  const cardHigh = s.cardEvents.filter(e=>e.info && (e.info.p==='kritis'||e.info.p==='tinggi')).length;
+
+  let html = `<div class="grid">
+    <div class="card"><div class="label">Total Transaksi</div><div class="num">${s.txnCount}</div><div class="sub">${s.entries.length} entri log total</div></div>
+    <div class="card accent-amber"><div class="label">Status Dispenser (E)</div><div class="num">${s.dispenserEvents.length}</div><div class="sub">${dispCritical} berprioritas Kritis</div></div>
+    <div class="card accent-tinggi"><div class="label">Status Card Reader (D)</div><div class="num">${s.cardEvents.length}</div><div class="sub">${cardHigh} berprioritas Tinggi/Kritis</div></div>
+    <div class="card ${s.emvFallback.length ? 'accent-kritis':''}"><div class="label">Gagal Inisialisasi Chip 3x</div><div class="num">${s.emvFallback.length}</div><div class="sub">dari ${s.txnCount} transaksi</div></div>
+  </div>`;
+
+  html += `<section class="block"><h3>Temuan Utama</h3>`;
+
+  if(s.dispenserByCode['10'] && s.dispenserByCode['10'].length){
+    const arr = s.dispenserByCode['10'];
+    const pct = Math.round(arr.length / Math.max(s.txnCount,1) * 100);
+    html += `<div class="finding"><div class="dot kritis"></div><div class="body">
+      <b>Dispenser stuck di status FATAL (M-10)</b> — muncul ${arr.length}× dari ${s.txnCount} transaksi (${pct}%), berulang sepanjang periode log.
+      M-10 bukan menunjuk satu modul fisik — ini adalah <b>status SOH (State of Health)</b> yang "menempel FATAL" akibat kegagalan modul lain yang terjadi sebelumnya, sampai di-reset lewat supervisor software. Kejadian paling awal di log ini sudah M-10 sejak transaksi pertama (#${arr[0].tttt}, ${arr[0].date} ${arr[0].time}) — artinya <b>M-code asli yang pertama kali men-trigger FATAL tidak tercakup di file log ini</b> (terjadi sebelum ${s.dateStart.date} ${s.dateStart.time}). Untuk menemukan modul fisik penyebabnya, tarik EJ log satu hari sebelumnya dan cari kode M- dispenser non-normal (mis. M-03 Pick Module, M-05 Sensor Transport, M-13/14 Exit Shutter, M-16 Timing Disk) yang muncul tepat sebelum M-10 pertama kali tercatat.
+    </div></div>`;
+  }
+  if(s.emvFallback.length){
+    html += `<div class="finding"><div class="dot tinggi"></div><div class="body">
+      <b>Contact unit smart card bermasalah (M-81)</b> — pada ${s.emvFallback.length} transaksi, inisialisasi chip gagal 3× berturut-turut ("CARD INITIALISE ATTEMPT 1/2/3") sebelum transaksi lanjut lewat jalur lain. Rekomendasi referensi: bersihkan kontak, uji kartu lain, periksa power supply contact unit — prioritas <b>Tinggi</b>.
+    </div></div>`;
+  }
+  const lowStock = Object.values(s.dispenserByCode).flat().map(e=>e.rInfo).filter(Boolean);
+  const lowKaset = {};
+  lowStock.forEach(r=>r.kaset.forEach(k=>{ if(k.lvl!=='normal') lowKaset[k.no] = k; }));
+  if(Object.keys(lowKaset).length){
+    const txt = Object.values(lowKaset).map(k=>`Kaset #${k.no}: ${k.txt}`).join('; ');
+    html += `<div class="finding"><div class="dot tinggi"></div><div class="body"><b>Status suplai kaset (R-status)</b> — ${esc(txt)}.</div></div>`;
+  }
+  if(s.powerUps.length){
+    html += `<div class="finding"><div class="dot menengah"></div><div class="body"><b>ATM mengalami POWER-UP/RESET</b> sebanyak ${s.powerUps.length}× (contoh: entri #${s.powerUps[0].seq}, ${s.powerUps[0].date} ${s.powerUps[0].time}). Bisa jadi reboot terjadwal atau gangguan listrik — cocokkan dengan log kelistrikan lokasi.</div></div>`;
+  }
+  if(!s.dispenserByCode['10'] && !s.emvFallback.length){
+    html += `<div class="finding"><div class="dot normal"></div><div class="body">Tidak ditemukan pola error dominan pada dispenser maupun card reader di log ini.</div></div>`;
+  }
+  html += `</section>`;
+
+  html += `<section class="block"><h3>Rekap Kode M-Status per Perangkat</h3><div class="grid" style="grid-template-columns:1fr 1fr;">`;
+  html += renderCodeTable('Currency Dispenser (E)', s.dispenserByCode, DISPENSER_M);
+  html += renderCodeTable('Card Reader/Writer (D)', s.cardByCode, CARDREADER_M);
+  html += `</div></section>`;
+
+  return html;
+}
+
+function renderCodeTable(title, byCode, dict){
+  const codes = Object.keys(byCode).sort((a,b)=>byCode[b].length-byCode[a].length);
+  let rows = codes.map(code=>{
+    const info = dict[code];
+    return `<tr><td class="code">M-${code}</td><td>${byCode[code].length}×</td><td>${info?badgeHTML(info.p):'—'}</td><td>${info&&info.part?esc(info.part):'—'}</td><td>${info?esc(info.c):'Tidak ada di kamus referensi'}</td></tr>`;
+  }).join('');
+  if(!codes.length) rows = `<tr><td colspan="5" style="color:var(--ink-faint);">Tidak ada kejadian.</td></tr>`;
+  return `<div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:13px;">${title}</div>
+    <table><thead><tr><th>Kode</th><th>Jumlah</th><th>Prioritas</th><th>Bagian Bermasalah</th><th>Kondisi</th></tr></thead><tbody>${rows}</tbody></table>
+  </div>`;
+}
+
+/* ---- Linimasa ---- */
+function renderLinimasaShell(){
+  return `
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Cari nomor transaksi, kode M-, teks log..." value="${esc(STATE.search)}">
+    <select id="filter">
+      <option value="all">Semua Kejadian</option>
+      <option value="transaksi">Transaksi</option>
+      <option value="status">Ada Kode Status (M-)</option>
+      <option value="supervisor">Mode Supervisor</option>
+      <option value="sistem">Sistem / Power</option>
+      <option value="lain">Lainnya</option>
+    </select>
+  </div>
+  <div id="linimasa-list"></div>`;
+}
+
+function entryMatchesFilter(e){
+  if(STATE.filter !== 'all' && e.cls !== STATE.filter) return false;
+  if(STATE.search){
+    const q = STATE.search.toLowerCase();
+    const hay = (e.seq + ' ' + e.raw.join(' ') + ' ' + e.events.map(ev=>ev.tttt||'').join(' ')).toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function entryLabel(e){
+  if(e.isTxnStart) return 'Transaksi dimulai';
+  if(e.isSupervisorEntry) return 'Masuk Mode Supervisor';
+  if(e.isSupervisorExit) return 'Keluar Mode Supervisor';
+  if(e.isPowerUp) return 'POWER-UP / RESET';
+  if(e.isCardReaderActivated) return 'Primary Card Reader Activated';
+  const statusEv = e.events.find(ev=>ev.type==='status' && ev.code);
+  if(statusEv) return `Status ${statusEv.deviceName} — M-${statusEv.code}`;
+  if(e.raw.length) return e.raw[0].replace(/^\*+|\*+$/g,'').trim().slice(0,60);
+  return 'Entri log';
+}
+
+function renderLinimasaList(){
+  const list = STATE.entries.filter(entryMatchesFilter);
+  const el = $('#linimasa-list');
+  if(!list.length){ el.innerHTML = `<div class="empty">Tidak ada entri yang cocok dengan pencarian/filter.</div>`; return; }
+  el.innerHTML = list.map(e=>{
+    const badges = [];
+    e.events.filter(ev=>ev.type==='status' && ev.info).forEach(ev=>{ badges.push(badgeHTML(ev.info.p)); });
+    if(e.cardInitAttempts>=3) badges.push(`<span class="badge tinggi">3x gagal chip</span>`);
+    return `<div class="entry" data-seq="${e.seq}">
+      <div class="head" onclick="toggleEntry('${e.seq}')">
+        <div class="seq">#${e.seq}</div>
+        <div class="ts">${e.date} ${e.time}</div>
+        <div class="tag">${esc(entryLabel(e))}</div>
+        <div class="badges">${badges.join('')}</div>
+        <div class="chev">&#9656;</div>
+      </div>
+      <div class="detail" id="detail-${e.seq}"></div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEntry(seq){
+  const entryEl = document.querySelector(`.entry[data-seq="${seq}"]`);
+  const isOpen = entryEl.classList.contains('open');
+  if(isOpen){ entryEl.classList.remove('open'); return; }
+  entryEl.classList.add('open');
+  const e = STATE.entries.find(x=>x.seq===seq);
+  const detailEl = $('#detail-'+seq);
+  if(detailEl.innerHTML) return; // already rendered
+  let html = '';
+  e.events.filter(ev=>ev.type==='status').forEach(ev=>{
+    if(ev.info){
+      html += `<div class="decode ${ev.info.p}">
+        <div class="title">M-${ev.code} · ${esc(ev.deviceName)} ${badgeHTML(ev.info.p)}</div>
+        <div class="row"><b>Kondisi:</b> ${esc(ev.info.c)}</div>
+        ${ev.info.part ? `<div class="row"><b>Bagian bermasalah:</b> ${esc(ev.info.part)}</div>` : ''}
+        <div class="row"><b>Tindakan:</b> ${esc(ev.info.a)}</div>
+        ${ev.txn ? `<div class="row"><b>Status transaksi:</b> ${esc(ev.txn.meaning)} <span class="mono">(kaset: ${ev.txn.sheets.join('/')})</span></div>` : ''}
+        ${ev.rInfo ? `<div class="row"><b>Status suplai (R-${esc(ev.r)}):</b> ${esc(ev.rInfo.bin.txt)}; ${ev.rInfo.kaset.map(k=>'Kaset#'+k.no+': '+k.txt).join('; ')}</div>` : ''}
+      </div>`;
+    } else if(ev.code) {
+      html += `<div class="decode menengah"><div class="title">M-${ev.code} · ${esc(ev.deviceName)}</div>
+        <div class="row">Kode ini tidak ada dalam kamus referensi yang dimuat untuk perangkat ${esc(ev.deviceName)}.</div></div>`;
+    }
+  });
+  if(e.cash){
+    html += `<div class="cashtable"><table><thead><tr><th></th><th>Tipe 1</th><th>Tipe 2</th><th>Tipe 3</th><th>Tipe 4</th></tr></thead><tbody>
+      <tr><td>Denominasi</td>${e.cash.denom.map(v=>'<td class="code">'+v+'</td>').join('')}</tr>
+      <tr><td>Dispensed</td>${e.cash.dispensed.map(v=>'<td class="code">'+v+'</td>').join('')}</tr>
+      <tr><td>Rejected</td>${e.cash.rejected.map(v=>'<td class="code">'+v+'</td>').join('')}</tr>
+      <tr><td>Remaining</td>${e.cash.remaining.map(v=>'<td class="code">'+v+'</td>').join('')}</tr>
+    </tbody></table></div>`;
+  }
+  html += `<div class="rawbox">${esc(e.raw.join('\n'))}</div>`;
+  detailEl.innerHTML = html;
+}
+
+function attachLinimasaHandlers(){
+  $('#search').addEventListener('input', e=>{ STATE.search = e.target.value; renderLinimasaList(); });
+  $('#filter').value = STATE.filter;
+  $('#filter').addEventListener('change', e=>{ STATE.filter = e.target.value; renderLinimasaList(); });
+}
+
+/* ---- Referensi ---- */
+function renderReferensiShell(){
+  return `
+  <div class="subtabs">
+    <button data-ref="dispenser" class="${STATE.refTab==='dispenser'?'active':''}">Dispenser (E)</button>
+    <button data-ref="cardreader" class="${STATE.refTab==='cardreader'?'active':''}">Card Reader (D)</button>
+    <button data-ref="devices" class="${STATE.refTab==='devices'?'active':''}">Kode Perangkat &amp; R-Status</button>
+  </div>
+  <div id="ref-table"></div>`;
+}
+
+function renderReferensiTable(){
+  $$('.subtabs button').forEach(b=>b.addEventListener('click', ()=>{ STATE.refTab = b.dataset.ref; renderTab(); }));
+  const el = $('#ref-table');
+  if(STATE.refTab === 'dispenser'){
+    const rows = Object.keys(DISPENSER_M).map(code=>{
+      const d = DISPENSER_M[code];
+      return `<tr><td class="code">M-${code}</td><td>${badgeHTML(d.p)}</td><td>${esc(d.part||'—')}</td><td>${esc(d.c)}</td><td>${esc(d.a)}</td></tr>`;
+    }).join('');
+    el.innerHTML = `<table><thead><tr><th>Kode</th><th>Prioritas</th><th>Bagian Bermasalah</th><th>Kondisi/Penyebab</th><th>Tindakan</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else if(STATE.refTab === 'cardreader'){
+    const rows = Object.keys(CARDREADER_M).map(code=>{
+      const d = CARDREADER_M[code];
+      return `<tr><td class="code">M-${code}</td><td>${esc(d.scope)}</td><td>${badgeHTML(d.p)}</td><td>${esc(d.c)}</td><td>${esc(d.part)}</td><td>${esc(d.a)}</td></tr>`;
+    }).join('');
+    el.innerHTML = `<table><thead><tr><th>Kode</th><th>Cakupan</th><th>Prioritas</th><th>Deskripsi Error</th><th>Bagian Bermasalah</th><th>Solusi</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else {
+    const devRows = Object.keys(DEVICE_NAMES).map(k=>`<tr><td class="code">${k}</td><td>${esc(DEVICE_NAMES[k])}</td></tr>`).join('');
+    el.innerHTML = `
+      <div class="grid" style="grid-template-columns:1fr 1fr;">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600;">Kode Perangkat (d)</div>
+          <table><thead><tr><th>Kode</th><th>Perangkat</th></tr></thead><tbody>${devRows}</tbody></table>
+        </div>
+        <div class="card" style="padding:16px 18px;">
+          <div style="font-weight:600;margin-bottom:10px;">Format Pesan Status (Native Mode)</div>
+          <div class="mono" style="font-size:13px;color:var(--amber);margin-bottom:14px;">tttt * m * d * aaaaaaaaa , M-bb , R-ccccc</div>
+          <div class="row" style="font-size:12.5px;color:var(--ink-dim);line-height:1.8;">
+            <b>tttt</b> No. transaksi (0001–9999)<br>
+            <b>m</b> 1 = Unsolicited (ATM mandiri) &middot; 2 = Solicited (diminta host)<br>
+            <b>d</b> Kode perangkat (satu huruf)<br>
+            <b>aaaaaaaaa</b> Status transaksi (khusus Dispenser: digit 1 = hasil dispense, digit 2-9 = lembar per kaset)<br>
+            <b>M-bb</b> Status diagnostik — field terpenting, artinya <u>berbeda per perangkat</u><br>
+            <b>R-ccccc</b> Status suplai — digit 1: reject bin, digit 2-5: kaset #1-#4 (1=cukup, 2=hampir habis, 3=habis)
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+/* ---- Ekspor ---- */
+function renderEkspor(){
+  return `
+  <div class="exportcard">
+    <h4>Ekspor CSV — Kejadian Status (M-)</h4>
+    <p>Semua kejadian M-status yang terdeteksi (dispenser, card reader, dan lainnya) beserta arti, prioritas, dan status suplai.</p>
+    <button class="btn primary" onclick="exportStatusCSV()">Unduh CSV</button>
+  </div>
+  <div class="exportcard">
+    <h4>Ekspor Excel — Laporan Lengkap</h4>
+    <p>File .xlsx dengan 3 sheet: Ringkasan, Kejadian Status Dispenser, dan Kejadian Status Card Reader.</p>
+    <button class="btn primary" onclick="exportExcel()">Unduh Excel (.xlsx)</button>
+  </div>`;
+}
+
+function toCSVRow(arr){ return arr.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(','); }
+
+function exportStatusCSV(){
+  const s = STATE.sum;
+  const header = ['No. Transaksi','Tanggal','Jam','Tipe(m)','Perangkat','Nama Perangkat','Kode M-','Prioritas','Bagian Bermasalah','Kondisi','Tindakan','R-Status Mentah','Status Suplai'];
+  const rows = [header];
+  s.statusEvents.forEach(ev=>{
+    const rTxt = ev.rInfo ? (ev.rInfo.bin.txt + '; ' + ev.rInfo.kaset.map(k=>'Kaset#'+k.no+':'+k.txt).join('; ')) : '';
+    rows.push([ev.tttt, ev.date, ev.time, ev.mtype==='1'?'Unsolicited':'Solicited', ev.device, ev.deviceName, ev.code?('M-'+ev.code):'', ev.info?PRIORITY_LABEL[ev.info.p]:'', ev.info?(ev.info.part||''):'', ev.info?ev.info.c:'', ev.info?ev.info.a:'', ev.r||'', rTxt]);
+  });
+  const csv = rows.map(toCSVRow).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (STATE.fileName||'ej_log') + '_status_events.csv';
+  a.click();
+}
+
+function exportExcel(){
+  const s = STATE.sum;
+  const wb = XLSX.utils.book_new();
+
+  const ringkasan = [
+    ['NCR EJ Log Reader — Ringkasan'],
+    ['File', STATE.fileName],
+    ['Periode', `${s.dateStart.date} ${s.dateStart.time} - ${s.dateEnd.date} ${s.dateEnd.time}`],
+    ['Total Transaksi', s.txnCount],
+    ['Total Entri Log', s.entries.length],
+    ['Kejadian Status Dispenser (E)', s.dispenserEvents.length],
+    ['Kejadian Status Card Reader (D)', s.cardEvents.length],
+    ['Transaksi Gagal Inisialisasi Chip 3x', s.emvFallback.length],
+    ['POWER-UP/RESET', s.powerUps.length],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), 'Ringkasan');
+
+  function eventsSheet(events){
+    const header = ['No. Transaksi','Tanggal','Jam','Tipe','Kode M-','Prioritas','Kondisi','Bagian Bermasalah','Tindakan','R-Status'];
+    const rows = [header];
+    events.forEach(ev=>{
+      const rTxt = ev.rInfo ? (ev.rInfo.bin.txt + '; ' + ev.rInfo.kaset.map(k=>'Kaset#'+k.no+':'+k.txt).join('; ')) : '';
+      rows.push([ev.tttt, ev.date, ev.time, ev.mtype==='1'?'Unsolicited':'Solicited', ev.code?('M-'+ev.code):'', ev.info?PRIORITY_LABEL[ev.info.p]:'', ev.info?ev.info.c:'', ev.info?(ev.info.part||''):'', ev.info?ev.info.a:'', rTxt]);
+    });
+    return XLSX.utils.aoa_to_sheet(rows);
+  }
+  XLSX.utils.book_append_sheet(wb, eventsSheet(s.dispenserEvents), 'Status Dispenser');
+  XLSX.utils.book_append_sheet(wb, eventsSheet(s.cardEvents), 'Status Card Reader');
+
+  XLSX.writeFile(wb, (STATE.fileName||'ej_log') + '_laporan.xlsx');
+}
+
+/* ============================= INIT ============================= */
+
+$$('#nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    $$('#nav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    STATE.tab = btn.dataset.tab;
+    renderTab();
+  });
+});
+
+$('#fileInput').addEventListener('change', e=>{ if(e.target.files.length) loadFile(e.target.files[0]); });
+$('#btn-reload').addEventListener('click', ()=>$('#fileInput').click());
+
+renderTab();
+</script>
+</body>
+</html>
