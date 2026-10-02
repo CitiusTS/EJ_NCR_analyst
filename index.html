@@ -3,31 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NCR EJ Log Reader</title>
+<title>NCR EJ Log Reader Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg: #14171c;
-    --panel: #1b1f26;
-    --panel-2: #21262f;
-    --line: #2c323c;
-    --ink: #e4e7ec;
-    --ink-dim: #939aa6;
-    --ink-faint: #5f6672;
-    --amber: #f0a94e;
-    --amber-dim: #7a5a2e;
-    --paper: #eee7d6;
-    --paper-ink: #2a2620;
-    --kritis: #e0605a;
-    --tinggi: #e0954e;
-    --menengah: #5b9bd9;
-    --normal: #55b088;
-    --kritis-bg: rgba(224,96,90,.13);
-    --tinggi-bg: rgba(224,149,78,.13);
-    --menengah-bg: rgba(91,155,217,.13);
-    --normal-bg: rgba(85,176,136,.13);
+    --bg:#f0f6ff; --panel:#ffffff; --panel-2:#e7f0fd; --line:#d2e0f3;
+    --ink:#10264a; --ink-dim:#46597a; --ink-faint:#7488a6;
+    --amber:#1d63d6; --amber-dim:#9cbdf0; --paper:#eef4ff; --paper-ink:#10264a;
+    --kritis:#d33a3a; --tinggi:#d9780f; --menengah:#1b8fc9; --normal:#169a68;
+    --kritis-bg:rgba(211,58,58,.09); --tinggi-bg:rgba(217,120,15,.10); --menengah-bg:rgba(27,143,201,.10); --normal-bg:rgba(22,154,104,.10);
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:14px;}
@@ -60,7 +46,7 @@
   .dropzone.drag{border-color:var(--amber);background:var(--panel-2);}
   .dropzone h2{font-size:19px;margin-bottom:8px;}
   .dropzone p{color:var(--ink-dim);font-size:13px;line-height:1.6;margin:0 0 18px;}
-  .dropzone .btn{display:inline-block;padding:10px 22px;background:var(--amber);color:#20180a;font-weight:600;border-radius:4px;font-size:13px;}
+  .dropzone .btn{display:inline-block;padding:10px 22px;background:var(--amber);color:#fff;font-weight:600;border-radius:4px;font-size:13px;}
   .dropzone input{display:none;}
   .sample-strip{max-width:640px;margin:0 auto;padding:14px 18px;background:var(--panel-2);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);line-height:1.7;}
 
@@ -117,7 +103,7 @@
   .entry.open .chev{transform:rotate(90deg);}
   .entry .detail{display:none;padding:0 16px 16px 16px;border-top:1px solid var(--line);}
   .entry.open .detail{display:block;}
-  .rawbox{background:#0f1115;border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#c9d6b8;white-space:pre-wrap;line-height:1.6;margin-top:12px;}
+  .rawbox{background:#f5f9ff;border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#1c3558;overflow-x:auto;white-space:pre-wrap;line-height:1.6;margin-top:12px;}
   .decode{margin-top:12px;padding:12px 14px;border-radius:4px;border:1px solid var(--line);}
   .decode.kritis{border-color:rgba(224,96,90,.4);background:var(--kritis-bg);}
   .decode.tinggi{border-color:rgba(224,149,78,.4);background:var(--tinggi-bg);}
@@ -135,7 +121,7 @@
 
   .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
   .btn{padding:10px 18px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:13px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
-  .btn.primary{background:var(--amber);color:#20180a;border-color:var(--amber);font-weight:600;}
+  .btn.primary{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:600;}
   .btn:hover{filter:brightness(1.08);}
   .exportcard{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:22px;max-width:480px;margin-bottom:16px;}
   .exportcard h4{font-size:14px;margin-bottom:6px;}
@@ -151,6 +137,64 @@
     .brand h1{font-size:0;}
     .brand .mark{margin-bottom:0;}
   }
+
+  .entry .seq{width:76px !important;}
+  details.inc{background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:8px;}
+  details.inc summary{cursor:pointer;padding:12px 16px;list-style:none;}
+  details.inc .row1{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;}
+  details.inc .row2{font-size:12.5px;color:var(--ink-dim);line-height:1.55;}
+  .kron{border-top:1px solid var(--line);padding:8px 16px 12px;max-height:380px;overflow:auto;}
+  .kl{display:flex;gap:14px;font-size:12.5px;padding:3px 0;color:var(--ink-dim);}
+  .kl span:first-child{font-family:'IBM Plex Mono',monospace;color:var(--ink-faint);flex:0 0 190px;}
+  .kl.er span:last-child{color:var(--kritis);} .kl.ak span:last-child{color:var(--amber);} .kl.ok span:last-child{color:var(--normal);}
+
+  /* ---- Tema terang biru-putih ---- */
+  .sidebar{box-shadow:1px 0 8px rgba(29,99,214,.06);}
+  .brand .mark{background:linear-gradient(90deg,#1d63d6,#5aa2f5);}
+  .card,.entry,details.inc,.exportcard,.finding,.dropzone{box-shadow:0 1px 3px rgba(16,38,74,.06);}
+  .badge.dev-e{background:rgba(29,99,214,.12);color:var(--amber);}
+  .badge.dev-d{background:rgba(27,143,201,.14);color:var(--menengah);}
+  .btn:hover{filter:none;background:var(--panel-2);} .btn.primary:hover{background:#1752b3;}
+  .toolbar input[type=text],.toolbar select,.toolbar input[type=number]{background:#fff;}
+  tr:hover td{background:#f3f8ff;}
+  .topbar{background:#fff;}
+
+  /* ---- Mobile ---- */
+  html,body{overflow-x:hidden;}
+  @media(max-width:780px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;align-items:center;border-right:none;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30;}
+    .brand{padding:8px 12px;border:none;flex-shrink:0;} .brand .mark{display:none;} .brand p{display:none;}
+    .brand h1{font-size:13.5px;line-height:1.2;max-width:70px;}
+    nav{display:flex;overflow-x:auto;padding:6px 6px 6px 0;gap:4px;flex:1;scrollbar-width:none;} nav::-webkit-scrollbar{display:none;}
+    nav button{width:auto;white-space:nowrap;border-left:none;border-bottom:2px solid transparent;border-radius:6px;padding:9px 12px;margin:0;font-size:13px;}
+    nav button span.txt{display:inline;}
+    nav button.active{border-bottom-color:var(--amber);}
+    .sidebar-foot{display:none;}
+    .topbar{padding:10px 14px;gap:10px;}
+    .topbar .info{gap:8px 16px;} .info .val{font-size:12px;word-break:break-word;}
+    .topbar .btn-row{width:100%;} .topbar .btn-row .btn{flex:1;padding:9px 8px;font-size:12.5px;}
+    .content{padding:14px;}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+    .grid[style]{grid-template-columns:minmax(0,1fr) !important;}
+    .card{padding:12px;} .card .num{font-size:22px;} .card .sub{font-size:11.5px;word-break:break-word;}
+    section.block > h3{font-size:13.5px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    th,td{padding:7px 8px;font-size:12px;} td{min-width:76px;}
+    .entry .head{flex-wrap:wrap;gap:6px 10px;padding:10px 12px;}
+    .entry .seq,.entry .ts{width:auto !important;}
+    .entry .tag{flex:1 1 100%;order:5;} .entry .badges{flex-wrap:wrap;}
+    .entry .detail{padding:0 12px 12px;}
+    .rawbox{font-size:11px;padding:10px;}
+    details.inc summary{padding:11px 12px;}
+    .kron{padding:8px 12px 12px;} .kl{flex-direction:column;gap:0;padding:5px 0;border-bottom:1px solid var(--line);} .kl span:first-child{flex:none;font-size:11.5px;}
+    .toolbar{gap:8px;} .toolbar input[type=text]{min-width:0;width:100%;flex:1 1 100%;} .toolbar select{flex:1 1 100%;}
+    .toolbar label{flex:1 1 100%;} .toolbar input[type=number]{width:100% !important;}
+    .subtabs{overflow-x:auto;} .subtabs button{white-space:nowrap;padding:9px 12px;}
+    .dropzone{margin:16px auto;padding:30px 16px;} .sample-strip{font-size:10.5px;overflow-x:auto;}
+    .exportcard{max-width:100%;padding:16px;}
+    .finding{padding:11px 12px;}
+  }
 </style>
 </head>
 <body>
@@ -158,11 +202,13 @@
   <div class="sidebar">
     <div class="brand">
       <div class="mark"></div>
-      <h1>EJ Log Reader</h1>
-      <p>Diagnosa NCR ATM by Laska</p>
+      <h1>EJ Log Reader Pro</h1>
+      <p>Multi-log · Insiden · Rekon</p>
     </div>
     <nav id="nav">
       <button data-tab="ringkasan" class="active"><span class="txt">Ringkasan</span></button>
+      <button data-tab="insiden"><span class="txt">Analisis Insiden</span></button>
+      <button data-tab="rekon"><span class="txt">Rekonsiliasi Kas</span></button>
       <button data-tab="linimasa"><span class="txt">Linimasa</span></button>
       <button data-tab="referensi"><span class="txt">Referensi Kode</span></button>
       <button data-tab="ekspor"><span class="txt">Ekspor</span></button>
@@ -176,7 +222,8 @@
         <div class="stat">Belum ada file dimuat</div>
       </div>
       <div class="btn-row" id="topbar-actions" style="display:none;">
-        <button class="btn" id="btn-reload">Muat File Lain</button>
+        <button class="btn" id="btn-reload">Ganti Semua Log</button>
+        <button class="btn primary" id="btn-add">+ Tambah Log</button>
       </div>
     </div>
     <div class="content" id="content">
@@ -185,7 +232,7 @@
   </div>
 </div>
 
-<input type="file" id="fileInput" accept=".txt,.log,.217,.json,*" style="display:none;">
+<input type="file" id="fileInput" multiple accept=".txt,.log,.217,.json,*" style="display:none;">
 
 <script>
 /* ============================= REFERENCE DATA ============================= */
@@ -353,7 +400,7 @@ function decodeTxnField(device, aaa){
   return null;
 }
 
-function parseLog(raw){
+function parseLogBase(raw){
   const clean = cleanText(raw);
   const lines = clean.split('\n');
   const headerRe = /^\*(\d+)\*(\d{2}\/\d{2}\/\d{4})\*(\d{2}:\d{2})\*$/;
@@ -510,13 +557,15 @@ function renderTab(){
   else if(STATE.tab === 'linimasa'){ c.innerHTML = renderLinimasaShell(); renderLinimasaList(); attachLinimasaHandlers(); }
   else if(STATE.tab === 'referensi') { c.innerHTML = renderReferensiShell(); renderReferensiTable(); }
   else if(STATE.tab === 'ekspor') c.innerHTML = renderEkspor();
+  else if(STATE.tab === 'insiden') c.innerHTML = renderInsiden();
+  else if(STATE.tab === 'rekon'){ c.innerHTML = renderRekon(); attachRekonHandlers(); }
 }
 
 function renderUpload(){
   return `
   <div class="dropzone" id="dropzone">
-    <h2>Muat File EJ Log NCR</h2>
-    <p>Seret file journal log (mis. EJMSA048.217) ke sini, atau klik untuk memilih file.<br>
+    <h2>Muat Satu atau Beberapa File EJ Log NCR</h2>
+    <p>Seret semua file journal log (mis. EJ000151.768 … .776, boleh sekaligus) ke sini, atau klik untuk memilih file.<br>
     Berlaku untuk format EJ APTRA Advance / NDC+, ekstensi apa pun.</p>
     <div class="btn">Pilih File</div>
   </div>
@@ -535,7 +584,7 @@ function attachUploadHandlers(){
   dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
   dz.addEventListener('drop', e=>{
     e.preventDefault(); dz.classList.remove('drag');
-    if(e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+    if(e.dataTransfer.files.length) loadFiles(e.dataTransfer.files,false);
   });
 }
 
@@ -757,7 +806,7 @@ function renderReferensiTable(){
 
 /* ---- Ekspor ---- */
 function renderEkspor(){
-  return `
+  return `<div class="exportcard"><h4>Ekspor Excel — Rekonsiliasi &amp; Insiden</h4><p>Sheet: Siklus Kas (termasuk opname fisik yang Anda isi), Transaksi Gagal untuk rekon ke host, dan Insiden.</p><button class="btn primary" onclick="exportRekon()">Unduh Excel Rekon</button></div>
   <div class="exportcard">
     <h4>Ekspor CSV — Kejadian Status (M-)</h4>
     <p>Semua kejadian M-status yang terdeteksi (dispenser, card reader, dan lainnya) beserta arti, prioritas, dan status suplai.</p>
@@ -820,6 +869,219 @@ function exportExcel(){
   XLSX.writeFile(wb, (STATE.fileName||'ej_log') + '_laporan.xlsx');
 }
 
+
+/* ============ MULTI-LOG · INSIDEN · REKONSILIASI ============ */
+const HOST_RC={'000':'Disetujui','055':'PIN salah','075':'PIN tries habis','051':'Saldo tidak cukup','061':'Melebihi limit tarik','013':'Nominal tidak valid','103':'Dispenser error dilaporkan ke host','008':'Kode host (cek spek switch)','116':'Kode host (cek spek switch)','119':'Kode host (cek spek switch)','076':'Kode host (cek spek switch)'};
+const sum=a=>a?a.reduce((x,y)=>x+(+y||0),0):0;
+const fmt=n=>n==null?'—':Math.round(n).toLocaleString('id-ID');
+const rp=n=>n==null?'—':'Rp '+fmt(n);
+Object.assign(STATE,{nominal:100000,opn:{},files:[],rekonFilter:'flag'});
+const natKey=n=>{const m=n.match(/(\d+)\D*$/);return m?+m[1]:0;};
+function entryDT(e){const[mo,d,y]=e.date.split('/').map(Number),[h,mi]=e.time.split(':').map(Number);return y<2020?null:new Date(y,mo-1,d,h,mi);}
+const when=e=>`${e.date} ${e.time}${e.dt?'':' ⚠jam reset'}`;
+const T4=/TYPE 1 =\s*(\d+)\s+TYPE 2 =\s*(\d+)\s*\nTYPE 3 =\s*(\d+)\s+TYPE 4 =\s*(\d+)/.source;
+const g4=(re,t)=>{const m=re.exec(t);return m?[1,2,3,4].map(i=>+m[i]):null;};
+
+function parseLog(raw){
+  const entries=parseLogBase(raw);
+  entries.forEach(e=>{
+    const t=e.raw.join('\n');let m;
+    e.cashAdded=g4(new RegExp('CASH ADDED\\s*\\n'+T4),t);
+    if(/CASH COUNTS CLEARED/.test(t)) e.cashCleared={disp:g4(new RegExp('CASH DISPENSED\\s*\\n'+T4),t),rem:g4(new RegExp('CASH REMAINING\\s*\\n'+T4),t)};
+    if((m=/(TOP|SECOND|THIRD|FOURTH) CASSETTE (REMOVED|INSERTED)/.exec(t))) e.cassMove=m[1]+' '+m[2];
+    if(/DIAGNOSTIC DISPENSE REPORT/.test(t)) e.diag={d:sum(g4(new RegExp('NOTES DISPENSED \\(DELTA\\)\\s*\\n'+T4),t)),r:sum(g4(new RegExp('NOTES REJECTED \\(DELTA\\)\\s*\\n'+T4),t))};
+    if((m=/(\d{6}) (\d\d\/\d\d\/\d\d) (\d\d:\d\d:\d\d) EMVN\d+ (\d{6})\s*\n\s*(\S+)\s+([\d,]+\.\d\d)\s+(\d{3})/.exec(t))) e.host={op:m[4],pan:m[5],amt:parseFloat(m[6].replace(/,/g,'')),rc:m[7]};
+    e.noArpc=/NO ARPC/.test(t);e.tc=/GENAC 2 : TC/.test(t);
+    const c=e.events.find(x=>x.type==='card');e.pan=c?c.pan:(e.host?e.host.pan:'');
+  });
+  return entries;
+}
+
+async function loadFiles(list,append){
+  const add=await Promise.all(Array.from(list).map(async f=>({name:f.name,raw:new TextDecoder('latin1').decode(await f.arrayBuffer())})));
+  const map=new Map((append?STATE.files:[]).map(f=>[f.name,f]));
+  add.forEach(f=>map.set(f.name,f));
+  const files=[...map.values()].sort((a,b)=>natKey(a.name)-natKey(b.name)||a.name.localeCompare(b.name));
+  const entries=[];
+  files.forEach(f=>parseLog(f.raw).forEach(e=>{e.file=f.name;e.seq=f.name.split('.').pop()+'-'+e.seq;entries.push(e);}));
+  entries.forEach((e,i)=>{e.g=i;e.dt=entryDT(e);});
+  STATE.files=files;STATE.entries=entries;STATE.sum=summarize(entries);STATE.fileName=files.length+' file ('+files.map(f=>f.name.split('.').pop()).join(', ')+')';
+  STATE.an=analyze(entries);
+  renderTopbar();renderTab();
+}
+
+function actOf(e){
+  if(e.cashAdded) return 'Isi uang: '+fmt(sum(e.cashAdded))+' lembar';
+  if(e.cashCleared) return 'Clear counter kas (dispensed '+fmt(sum(e.cashCleared.disp))+', sisa '+fmt(sum(e.cashCleared.rem))+')';
+  if(e.diag) return 'Tes dispense diagnostik: keluar '+e.diag.d+', reject '+e.diag.r;
+  if(e.cassMove) return 'Kaset '+e.cassMove;
+  if(e.isPowerUp) return 'Power-up / reset mesin';
+  if(e.isSupervisorEntry) return 'Masuk mode supervisor';
+  if(e.isSupervisorExit) return 'Keluar mode supervisor';
+  return null;
+}
+
+function analyze(entries){
+  let A=analyzeOnce(entries);
+  if(!STATE.nomUser){const v=A.txs.filter(t=>t.h&&t.h.rc==='000'&&t.dd>0).map(t=>Math.round(t.h.amt/t.dd)),c={};v.forEach(x=>c[x]=(c[x]||0)+1);
+    const m=+Object.keys(c).sort((a,b)=>c[b]-c[a])[0];if(m&&m!==STATE.nominal){STATE.nominal=m;A=analyzeOnce(entries);}}
+  return A;
+}
+function analyzeOnce(entries){
+  const nom=STATE.nominal,cycles=[],txs=[];let cyc,prev;
+  const open=(e,label,carry)=>{cyc={i:cycles.length,label,startE:e,carry,added:0,fills:[],last:null,closeReport:null,endE:e,txs:[]};cycles.push(cyc);prev=cyc.i?{d:0,r:0}:null;};
+  open(entries[0],'Awal data (pengisian sebelum log)',null);
+  entries.forEach(e=>{
+    if(e.cashCleared){cyc.closeReport=e.cashCleared;open(e,'Setelah clear counter '+when(e),sum(e.cashCleared.rem));}
+    if(e.cashAdded){const q=sum(e.cashAdded);cyc.added+=q;cyc.fills.push({e,q});}
+    let dd=null,dr=null;
+    if(e.cash){
+      const cd=sum(e.cash.dispensed),cr=sum(e.cash.rejected),cm=sum(e.cash.remaining);
+      if(prev){dd=cd-prev.d;dr=cr-prev.r;if(dd<0||dr<0){dd=dr=null;}}
+      prev={d:cd,r:cr};cyc.last={d:cd,r:cr,m:cm};
+    }
+    cyc.endE=e;
+    if(!e.isTxnStart) return;
+    const h=e.host,errs=e.events.filter(x=>x.type==='status'&&x.device==='E'&&x.code&&x.code!=='00');
+    const wd=(h&&h.op.startsWith('01'))||errs.length||(dd>0);
+    if(!wd&&!e.noArpc&&!(h&&h.rc!=='000')) return;
+    const t={e,g:e.g,cyc:cyc.i,h,errs,dd,dr,pan:e.pan||'',st:'OK',lv:'normal',amt:h?h.amt:(dr>0?dr*nom:null),risk:0};
+    const approved=e.tc||(h&&h.rc==='000');
+    if(errs.length&&!dd&&approved&&!(h&&h.rc==='103')){t.st='Dispense gagal M-'+errs[0].code+', host sudah approve → cek reversal';t.lv='kritis';t.risk=t.amt||0;}
+    else if(errs.length&&h&&h.rc==='103'){t.st='Dispenser M-'+errs[0].code+', host diberi tahu (103)';t.lv='tinggi';}
+    else if(errs.length){t.st='Dispenser error M-'+errs[0].code;t.lv='tinggi';}
+    else if(e.noArpc){t.st='Host tidak kirim ARPC (NO ARPC)';t.lv='menengah';}
+    else if(h&&h.rc!=='000'){t.st='Ditolak host '+h.rc+': '+(HOST_RC[h.rc]||'?');t.lv=['055','051','061','075','013'].includes(h.rc)?'normal':'menengah';}
+    else if(h&&h.rc==='000'&&dd===0){t.st='Host approve tapi 0 lembar keluar';t.lv='kritis';t.risk=h.amt;}
+    else if(h&&h.rc==='000'&&dd>0&&h.amt&&![10000,20000,50000,100000].includes(Math.round(h.amt/dd))){t.st='Nominal host '+fmt(h.amt)+' tidak cocok dengan '+dd+' lembar keluar';t.lv='tinggi';}
+    else if(!(dd>0)&&!(h&&h.op.startsWith('01'))) return;
+    t.ok=t.st==='OK'&&dd>0;txs.push(t);cyc.txs.push(t);
+  });
+  const txByG={};txs.forEach(t=>txByG[t.g]=t);
+  /* insiden */
+  const incs={};
+  entries.forEach(e=>e.events.forEach(ev=>{
+    if(ev.type==='status'&&/^\d\d$/.test(ev.code||'')&&ev.code!=='00'&&['E','D','C'].includes(ev.device)){
+      const dev=ev.device==='E'?'E':'D',k=dev+'-'+ev.code;
+      (incs[k]=incs[k]||{k,dev,code:ev.code,info:ev.info,list:[]}).list.push(e);
+    }}));
+  const list=Object.values(incs).map(x=>{
+    x.first=x.list[0];x.last=x.list[x.list.length-1];
+    x.rec=txs.find(t=>t.g>x.last.g&&(x.dev==='E'?t.ok:(t.h&&!t.errs.length&&t.e.cardInitAttempts<3)));
+    x.okAfter=x.rec?txs.filter(t=>t.g>=x.rec.g&&t.ok).length:0;
+    x.endG=x.rec?x.rec.g:Math.min(entries.length-1,x.last.g+30);
+    x.acts=entries.filter(e=>e.g>=x.first.g&&e.g<=x.endG&&actOf(e));
+    x.hours=(x.rec&&x.rec.e.dt&&x.first.dt)?(x.rec.e.dt-x.first.dt)/36e5:null;
+    return x;}).sort((a,b)=>b.list.length-a.list.length);
+  const days=[],dm={};
+  txs.forEach(t=>{const d=t.e.date,k=dm[d]||(dm[d]={d,ok:0,err:0,arpc:0,tolak:0,first:t.e});if(!dm[d])return;
+    if(t.ok)k.ok++;else if(t.errs.length)k.err++;else if(t.e.noArpc)k.arpc++;else if(t.st!=='OK')k.tolak++;});
+  return{cycles,txs,txByG,incs:list,days:Object.values(dm).sort((a,b)=>a.first.g-b.first.g),badClock:entries.filter(e=>!e.dt).length};
+}
+
+/* ---- Tab Insiden ---- */
+function renderInsiden(){
+  const A=STATE.an,s=STATE.sum;
+  const E=A.incs.filter(x=>x.dev==='E').reduce((a,x)=>a+x.list.length,0);
+  const open=A.incs.filter(x=>!x.rec).length;
+  let h=`<div class="grid">
+   <div class="card accent-amber"><div class="label">Jenis Masalah</div><div class="num">${A.incs.length}</div><div class="sub">kombinasi perangkat + kode M</div></div>
+   <div class="card accent-kritis"><div class="label">Kejadian Dispenser</div><div class="num">${E}</div><div class="sub">dari ${A.txs.filter(t=>t.ok).length+A.txs.filter(t=>t.errs.length).length} percobaan tarik tunai</div></div>
+   <div class="card ${open?'accent-kritis':''}"><div class="label">Belum Terbukti Pulih</div><div class="num">${open}</div><div class="sub">tanpa transaksi sukses sesudah error terakhir</div></div>
+   <div class="card accent-tinggi"><div class="label">Entri Jam Tidak Valid</div><div class="num">${A.badClock}</div><div class="sub">${s.powerUps.length} power-up/reset; durasi hanya dihitung dari jam valid</div></div></div>
+  <section class="block"><h3>Masalah dari Awal sampai Pengerjaan <span style="font-weight:400;color:var(--ink-faint)">(klik baris untuk kronologi)</span></h3>`;
+  if(!A.incs.length) h+='<p style="color:var(--ink-dim)">Tidak ada M-status error pada dispenser/card reader.</p>';
+  A.incs.forEach(x=>{
+    const p=x.info?x.info.p:'normal';
+    h+=`<details class="inc"><summary><div class="row1"><span class="badge dev-${x.dev.toLowerCase()}">${x.dev==='E'?'Dispenser':'Card Reader'} M-${x.code}</span>${badgeHTML(p)}<b>${esc(x.info?x.info.c:'Kode tidak ada di kamus')}</b></div>
+     <div class="row2">${x.list.length}× · awal ${when(x.first)} (${esc(x.first.file)}) · terakhir ${when(x.last)} · ${x.acts.length} tindakan tercatat · ${x.rec?`<span style="color:var(--normal)">pulih ${when(x.rec.e)}${x.hours!=null?' ('+x.hours.toFixed(1)+' jam sejak awal)':''}, ${x.okAfter} tarik tunai sukses sesudahnya</span>`:`<span style="color:var(--kritis)">belum terbukti pulih</span>`}</div>
+     ${x.info?`<div class="row2">Bagian: ${esc(x.info.part)} · Tindakan standar: ${esc(x.info.a)}</div>`:''}</summary>
+     <div class="kron">${kronologi(x).map(l=>`<div class="kl ${l.k}"><span>${esc(l.w)}</span><span>${esc(l.t)}</span></div>`).join('')}</div></details>`;
+  });
+  h+='</section>';
+  h+=`<section class="block"><h3>Tren per Tanggal EJ</h3><table><tr><th>Tanggal EJ</th><th>Tarik tunai sukses</th><th>Error dispenser</th><th>NO ARPC</th><th>Ditolak host</th><th>% error dispenser</th></tr>
+   ${A.days.map(d=>{const n=d.ok+d.err;return `<tr><td class="code">${d.d}${d.first.dt?'':' ⚠'}</td><td>${d.ok}</td><td style="color:${d.err?'var(--kritis)':'inherit'}">${d.err}</td><td>${d.arpc}</td><td>${d.tolak}</td><td>${n?Math.round(d.err/n*100)+'%':'—'}</td></tr>`}).join('')}</table></section>`;
+  return h;
+}
+function kronologi(x){
+  const A=STATE.an,out=[];
+  STATE.entries.filter(e=>e.g>=x.first.g&&e.g<=x.endG).forEach(e=>{
+    e.events.forEach(ev=>{if(ev.type==='status'&&/^\d\d$/.test(ev.code||'')&&ev.code!=='00'&&ev.device===(x.dev==='E'?'E':ev.device)&&['E','D','C'].includes(ev.device)){
+      out.push({k:'er',w:when(e),t:`${ev.deviceName.split(' (')[0]} M-${ev.code}: ${ev.info?ev.info.c:'?'}`+(A.txByG[e.g]?` [${A.txByG[e.g].st}]`:'')});}});
+    const a=actOf(e);if(a) out.push({k:'ak',w:when(e),t:'🔧 '+a});
+    if(x.rec&&e.g===x.rec.g) out.push({k:'ok',w:when(e),t:'✔ Tarik tunai/transaksi sukses pertama setelah error terakhir'});
+  });
+  return out.slice(0,200);
+}
+
+/* ---- Tab Rekonsiliasi ---- */
+function cyCalc(c){
+  const L=c.last||{d:0,r:0,m:0},derived=L.m+L.d,awal=c.fills.length?c.added:(c.carry!=null?c.carry:derived);
+  const exp=awal-L.d-L.r;
+  return{awal,derived,disp:L.d,rej:L.r,exp,rem:L.m,diff:L.m-exp,inconsistent:derived!==awal,
+    risk:c.txs.reduce((a,t)=>a+(t.risk||0),0),flag:c.txs.filter(t=>t.lv==='kritis').length,hasData:!!c.last};
+}
+function renderRekon(){
+  const A=STATE.an,nom=STATE.nominal;
+  let h=`<section class="block"><h3>Parameter</h3><div class="toolbar"><label style="color:var(--ink-dim)">Nominal per lembar (Rp)</label><input type="number" id="nomInput" value="${nom}" style="width:140px;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:8px;border-radius:4px"><span style="color:var(--ink-faint);font-size:12px">Terdeteksi otomatis dari transaksi sukses (nominal host ÷ lembar). Ubah bila berbeda; isi opname fisik di tiap siklus.</span></div></section>`;
+  A.cycles.forEach((c,i)=>{
+    const k=cyCalc(c);if(!k.hasData&&!c.fills.length) return;
+    const o=STATE.opn[i]||{};
+    h+=`<section class="block"><h3>Siklus ${i+1}: ${esc(c.label)} → ${c.endE?when(c.endE):'-'}</h3>
+    <div class="grid">
+     <div class="card"><div class="label">Awal pengisian</div><div class="num">${fmt(k.awal)}</div><div class="sub">${c.fills.length?'dari log CASH ADDED ('+c.fills.map(f=>when(f.e)).join(', ')+')':'sisa sebelumnya / diturunkan dari counter (sisa+keluar)'} · ${rp(k.awal*nom)}</div></div>
+     <div class="card accent-amber"><div class="label">Keluar (dispensed)</div><div class="num">${fmt(k.disp)}</div><div class="sub">${rp(k.disp*nom)}</div></div>
+     <div class="card accent-tinggi"><div class="label">Reject</div><div class="num">${fmt(k.rej)}</div><div class="sub">${rp(k.rej*nom)} masuk reject bin</div></div>
+     <div class="card"><div class="label">Sisa seharusnya</div><div class="num">${fmt(k.exp)}</div><div class="sub">counter mesin: ${fmt(k.rem)} · selisih ${fmt(k.diff)}${k.diff===k.rej&&k.rej?' (= jumlah reject: counter SISA tidak mengurangi lembar reject)':''}</div></div></div>
+    ${k.inconsistent?`<div class="finding"><div class="dot tinggi"></div><div class="body">Counter (sisa+keluar = <b>${fmt(k.derived)}</b>) tidak sama dengan awal (${fmt(k.awal)}). Cek kaset/counter saat pengisian.</div></div>`:''}
+    ${c.closeReport?`<div class="finding"><div class="dot menengah"></div><div class="body">Laporan mesin saat clear: keluar <b>${fmt(sum(c.closeReport.disp))}</b>, sisa <b>${fmt(sum(c.closeReport.rem))}</b> lembar (${rp(sum(c.closeReport.disp)*nom)} keluar).</div></div>`:''}
+    <div class="finding"><div class="dot ${k.flag?'kritis':'normal'}"></div><div class="body"><b>${k.flag}</b> transaksi perlu rekon ke host (approve tanpa uang keluar / selisih) · perkiraan nominal berisiko <b>${rp(k.risk)}</b></div></div>
+    <div class="toolbar" style="flex-wrap:wrap"><b style="color:var(--ink)">Opname fisik:</b>
+     <label style="color:var(--ink-dim)">Lembar di kaset</label><input type="number" id="ok-${i}" value="${o.k??''}" oninput="opn(${i})" style="width:110px;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:8px;border-radius:4px">
+     <label style="color:var(--ink-dim)">Lembar di reject bin</label><input type="number" id="or-${i}" value="${o.r??''}" oninput="opn(${i})" style="width:110px;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:8px;border-radius:4px"></div>
+    <div id="opr-${i}" style="margin-top:8px"></div></section>`;
+  });
+  h+=`<section class="block"><h3>Daftar Transaksi untuk Rekon</h3><div class="toolbar"><select id="rkF" style="background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:8px;border-radius:4px"><option value="flag">Perlu rekon (kritis/tinggi)</option><option value="fail">Semua yang gagal</option><option value="all">Semua tarik tunai</option></select></div><div id="rkTbl"></div></section>`;
+  return h;
+}
+function rekonRows(){
+  const f=STATE.rekonFilter,T=STATE.an.txs;
+  return T.filter(t=>f==='all'||(f==='fail'&&!t.ok)||(f==='flag'&&(t.lv==='kritis'||t.lv==='tinggi')));
+}
+function renderRkTbl(){
+  const R=rekonRows();
+  $('#rkTbl').innerHTML=`<p style="color:var(--ink-dim);font-size:12px">${R.length} baris. Nominal host kosong = tidak ada record ke host; perkiraan dari jumlah lembar yang di-reject × nominal.</p><table><tr><th>Waktu EJ</th><th>File</th><th>Kartu</th><th>Nominal host</th><th>Keluar</th><th>Reject</th><th>Status</th></tr>
+  ${R.map(t=>`<tr><td class="code">${when(t.e)}</td><td>${esc(t.e.file.split('.').pop())}</td><td class="code">${esc(t.pan.replace(/\*/g,'X'))}</td><td>${t.h?rp(t.h.amt):'—<br><small>≈ '+rp(t.amt)+'</small>'}</td><td>${t.dd==null?'—':t.dd}</td><td>${t.dr==null?'—':t.dr}</td><td>${badgeHTML(t.lv)} ${esc(t.st)}</td></tr>`).join('')}</table>`;
+}
+function opn(i){
+  const c=STATE.an.cycles[i],k=cyCalc(c),nom=STATE.nominal;
+  const a=$('#ok-'+i).value,b=$('#or-'+i).value;STATE.opn[i]={k:a===''?undefined:+a,r:b===''?undefined:+b};
+  const cl=(v,d,l)=>`<span style="color:${v===0?'var(--normal)':'var(--kritis)'}">${l}: fisik ${fmt(d.f)} vs sistem ${fmt(d.s)} → selisih <b>${v>0?'+':''}${fmt(v)}</b> lembar (${rp(v*nom)})${v===0?' ✔ cocok':''}</span>`;
+  let o=[];if(a!=='') o.push(cl(+a-k.exp,{f:+a,s:k.exp},'Kaset'));
+  if(b!=='') o.push(cl(+b-k.rej,{f:+b,s:k.rej},'Reject bin'));
+  $('#opr-'+i).innerHTML=o.join('<br>');
+}
+function attachRekonHandlers(){
+  $('#nomInput').addEventListener('change',e=>{STATE.nominal=+e.target.value||50000;STATE.nomUser=true;STATE.an=analyze(STATE.entries);renderTab();});
+  $('#rkF').value=STATE.rekonFilter;$('#rkF').addEventListener('change',e=>{STATE.rekonFilter=e.target.value;renderRkTbl();});
+  renderRkTbl();STATE.an.cycles.forEach((c,i)=>{if($('#ok-'+i)&&(STATE.opn[i]))opn(i);});
+}
+
+function exportRekon(){
+  const A=STATE.an,nom=STATE.nominal,wb=XLSX.utils.book_new();
+  const cyc=[['Siklus','Periode awal','Periode akhir','Awal (lembar)','Keluar','Reject','Sisa seharusnya','Sisa counter','Selisih counter','Opname kaset','Selisih kaset','Opname reject bin','Selisih reject','Tx perlu rekon','Rp berisiko']];
+  A.cycles.forEach((c,i)=>{const k=cyCalc(c);if(!k.hasData&&!c.fills.length)return;const o=STATE.opn[i]||{};
+    cyc.push([i+1,when(c.startE),when(c.endE),k.awal,k.disp,k.rej,k.exp,k.rem,k.diff,o.k??'',o.k!=null?o.k-k.exp:'',o.r??'',o.r!=null?o.r-k.rej:'',k.flag,k.risk]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cyc),'Siklus Kas');
+  const tx=[['Waktu EJ','File','Kartu','Nominal host','Estimasi nominal','Lembar keluar','Lembar reject','Kode host','Status','Level']];
+  A.txs.filter(t=>!t.ok).forEach(t=>tx.push([when(t.e),t.e.file,t.pan,t.h?t.h.amt:'',t.amt??'',t.dd??'',t.dr??'',t.h?t.h.rc:'',t.st,t.lv]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tx),'Transaksi Gagal');
+  const inc=[['Perangkat','Kode M','Arti','Bagian','Jumlah','Awal','Terakhir','Tindakan tercatat','Pulih sejak','Tarik tunai sukses sesudahnya']];
+  A.incs.forEach(x=>inc.push([x.dev==='E'?'Dispenser':'Card Reader','M-'+x.code,x.info?x.info.c:'',x.info?x.info.part:'',x.list.length,when(x.first),when(x.last),x.acts.length,x.rec?when(x.rec.e):'belum pulih',x.okAfter]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(inc),'Insiden');
+  XLSX.writeFile(wb,'rekon_ej_ncr.xlsx');
+}
+
 /* ============================= INIT ============================= */
 
 $$('#nav button').forEach(btn=>{
@@ -831,8 +1093,9 @@ $$('#nav button').forEach(btn=>{
   });
 });
 
-$('#fileInput').addEventListener('change', e=>{ if(e.target.files.length) loadFile(e.target.files[0]); });
-$('#btn-reload').addEventListener('click', ()=>$('#fileInput').click());
+$('#fileInput').addEventListener('change', e=>{ if(e.target.files.length) loadFiles(e.target.files,STATE.append); STATE.append=false; e.target.value=''; });
+$('#btn-reload').addEventListener('click', ()=>{STATE.append=false;$('#fileInput').click();});
+$('#btn-add').addEventListener('click', ()=>{STATE.append=true;$('#fileInput').click();});
 
 renderTab();
 </script>
